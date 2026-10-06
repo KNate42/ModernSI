@@ -17,3 +17,9 @@ export function qs(params: Record<string, Value>): string {
 export function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
+
+// Where to go after login. Only same-site paths: "//host", "/\host" and absolute URLs would send people off the site.
+export function safeNext(next: string | undefined): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/personal";
+  return next;
+}
