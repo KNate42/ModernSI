@@ -2,6 +2,7 @@
 Connections to every store the backend uses. I open them once at startup and keep them on app.state.
 This work made by Anfinogentov Nikita
 """
+import asyncio
 import time
 
 import clickhouse_connect
@@ -9,6 +10,13 @@ from pymongo import AsyncMongoClient
 from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+
+async def close_quietly(client):
+    try:
+        await client.close()
+    except Exception:
+        pass
 
 
 class stores:
@@ -21,6 +29,7 @@ class stores:
         self.mongo = self.mongo_client[settings.mongo_db]
         self.clickhouse = None
         self.clickhouse_tried_at = float("-inf")
+        self.closing = set()
 
     async def get_clickhouse(self):
         # The ClickHouse client connects eagerly; if ClickHouse is down I retry at most every 5 seconds
@@ -42,8 +51,13 @@ class stores:
         return self.clickhouse
 
     def drop_clickhouse(self):
-        # Called after a failed query, so the next call reconnects instead of reusing a broken client
-        self.clickhouse = None
+        # Called after a failed query, so the next call reconnects instead of reusing a broken client;
+        # I close the old one in the background so its HTTP session does not leak
+        client, self.clickhouse = self.clickhouse, None
+        if client is not None:
+            task = asyncio.get_running_loop().create_task(close_quietly(client))
+            self.closing.add(task)
+            task.add_done_callback(self.closing.discard)
 
     async def health(self):
         result = {}
