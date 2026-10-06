@@ -1,0 +1,217 @@
+<!doctype html>
+<!--
+  ModernHub IS homepage mock with the intro, for design sign-off. Sample data only.
+  This work made by Anfinogentov Nikita
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ModernHub IS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Runs before first paint: applies a saved theme and decides whether this visit gets the intro.
+    (function () {
+      var root = document.documentElement;
+      try { var theme = localStorage.getItem("mh_theme"); if (theme === "light" || theme === "dark") root.dataset.theme = theme; } catch (e) {}
+      var forced = new URLSearchParams(location.search).has("intro");
+      try { if (forced || sessionStorage.getItem("mh_intro_seen") !== "1") root.dataset.intro = "1"; } catch (e) { root.dataset.intro = "1"; }
+    })();
+  </script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B0B0D'/%3E%3Cpath d='M16 16 C20 11 24 9 28 8 M16 16 C11 19 8 23 6 27 M16 16 C19 20 23 22 27 23' stroke='%239B85FF' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23F4F2EE'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div class="intro" id="intro" role="dialog" aria-label="ModernHub IS intro" hidden>
+  <canvas aria-hidden="true"></canvas>
+  <div class="intro-word" data-intro-word>ModernHub IS</div>
+  <div class="intro-dot" data-intro-dot aria-hidden="true"></div>
+  <div class="intro-welcome" data-intro-welcome>Welcome!</div>
+  <button class="intro-skip" type="button" data-intro-skip>Skip intro</button>
+</div>
+
+<header class="header">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="ModernHub IS home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 16 C20 11 24 9 28 8 M16 16 C11 19 8 23 6 27 M16 16 C19 20 23 22 27 23" stroke="var(--accent-text)" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg>
+      ModernHub IS
+    </a>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#pillars">Academic</a>
+      <a href="#pillars">International</a>
+      <a href="#ideas">Community</a>
+      <a href="#feed">Personal</a>
+      <span class="divider" aria-hidden="true"></span>
+      <a href="#campuses">Forum</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Switch colour theme">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+      <a class="btn btn-primary" href="#top">Join</a>
+      <button class="icon-btn menu-btn" type="button" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h18M3 17h18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <svg class="hero-net" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M820 300 C 900 200, 1000 160, 1200 120"/>
+        <path d="M820 300 C 760 420, 700 500, 640 600"/>
+        <path d="M820 300 C 940 340, 1040 420, 1200 460"/>
+        <path d="M820 300 C 860 180, 880 90, 900 0"/>
+        <path d="M820 300 C 700 260, 600 280, 480 240"/>
+        <path d="M480 240 C 420 200, 380 120, 360 0"/>
+        <path d="M1040 200 C 1080 260, 1120 300, 1200 320"/>
+      </g>
+      <g fill="currentColor">
+        <circle cx="820" cy="300" r="6"/><circle cx="480" cy="240" r="4"/><circle cx="1040" cy="200" r="4"/><circle cx="700" cy="500" r="3"/>
+      </g>
+    </svg>
+    <div class="wrap">
+      <p class="eyebrow">An independent international student network</p>
+      <h1>One hub. Every campus.</h1>
+      <p class="lead">A digital ecosystem built around the student experience.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="#top">Join with your university email</a>
+        <a class="btn" href="#ideas">Explore ideas</a>
+      </div>
+      <div class="stats" aria-label="Network in numbers">
+        <div class="stat"><b>1,284</b><span>students</span></div>
+        <div class="stat"><b>9</b><span>campuses</span></div>
+        <div class="stat"><b>37</b><span>ideas became events</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pillars">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">What lives here</p>
+          <h2>Four directions, one account</h2>
+        </div>
+      </div>
+      <div class="pillars">
+        <a class="card pillar" href="#pillars"><div class="node"></div><h3>Academic</h3>
+          <ul><li>Schedule</li><li>Courses</li><li>Professors</li><li>Resources</li><li>Deadlines</li></ul></a>
+        <a class="card pillar" href="#pillars"><div class="node"></div><h3>International</h3>
+          <ul><li>Learning portals</li><li>Exchange opportunities</li><li>Scholarships</li><li>Conferences</li><li>International events</li></ul></a>
+        <a class="card pillar" href="#ideas"><div class="node"></div><h3>Community</h3>
+          <ul><li>Speaking Club</li><li>Volunteering</li><li>Student Government</li><li>Student Voice</li><li>Campus events</li></ul></a>
+        <a class="card pillar" href="#feed"><div class="node"></div><h3>Personal</h3>
+          <ul><li>Notifications</li><li>Activity history</li><li>Achievements</li><li>Digital portfolio</li></ul></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="ideas">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Student ideas → real initiatives</p>
+          <h2>Your idea can become a campus activity</h2>
+          <p class="muted">Propose it, gather support, and Student Government takes it from there.</p>
+        </div>
+        <a class="btn btn-primary" href="#ideas">Propose an idea</a>
+      </div>
+      <ol class="steps" aria-label="How an idea becomes an event">
+        <li class="step"><b>Idea</b><span>Any student proposes</span></li>
+        <li class="step"><b>Support</b><span>50 votes to go further</span></li>
+        <li class="step"><b>Review</b><span>Student Government decides</span></li>
+        <li class="step"><b>Team</b><span>Volunteers join in</span></li>
+        <li class="step"><b>On the Hub</b><span>It becomes an event</span></li>
+      </ol>
+      <div class="ideas-grid">
+        <article class="card spotlight">
+          <span class="tag">Event · whole network</span>
+          <h3>International Food Festival</h3>
+          <p class="muted">One evening, one table per country. Students cook a dish from home and share the story behind it.</p>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="50" aria-valuenow="41" aria-label="Support"><i style="width:82%"></i></div>
+          <p class="muted"><b style="color:var(--fg)">41 of 50</b> students support this idea</p>
+          <a class="btn" href="#ideas">Support it</a>
+        </article>
+        <div class="card">
+          <h3>Trending this week</h3>
+          <ul class="idea-list">
+            <li><a href="#ideas"><span>Peer tutoring hour before exams<small>Academic initiative · Almaty</small></span><span class="votes">38</span></a></li>
+            <li><a href="#ideas"><span>Weekend speaking club in Spanish<small>Club · whole network</small></span><span class="votes">29</span></a></li>
+            <li><a href="#ideas"><span>Quiet study room open until midnight<small>Campus life · Tbilisi</small></span><span class="votes">24</span></a></li>
+            <li><a href="#ideas"><span>River clean-up with the eco club<small>Volunteering · Petropavl</small></span><span class="votes">17</span></a></li>
+            <li><a href="#ideas"><span>Open data hackathon<small>Research project · whole network</small></span><span class="votes">12</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="events">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">On the Hub</p><h2>Coming up</h2></div>
+      </div>
+      <div class="events">
+        <a class="card event" href="#events"><time>Oct 18 · 18:00</time><h3>Conversation night</h3><p class="muted">Online · whole network</p></a>
+        <a class="card event" href="#events"><time>Oct 22 · 15:00</time><h3>CV clinic with alumni</h3><p class="muted">Room 204 · Almaty</p></a>
+        <a class="card event" href="#events"><time>Oct 26 · 11:00</time><h3>Autumn volunteering day</h3><p class="muted">City park · Petropavl</p></a>
+        <a class="card event" href="#events"><time>Nov 2 · 19:00</time><h3>Board games &amp; tea</h3><p class="muted">Student lounge · Tbilisi</p></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="feed">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">Live across the network</p><h2>What just happened</h2></div>
+      </div>
+      <ul class="feed">
+        <li><span class="dot"></span><span>Aru proposed <a href="#ideas">Peer tutoring hour before exams</a><small>4 min ago · Almaty</small></span></li>
+        <li><span class="dot"></span><span><a href="#ideas">Weekend speaking club in Spanish</a> reached 25 votes<small>12 min ago · whole network</small></span></li>
+        <li><span class="dot"></span><span>Student Government approved <a href="#ideas">Board games &amp; tea</a><small>1 h ago · Tbilisi</small></span></li>
+        <li><span class="dot"></span><span>The team for <a href="#ideas">Autumn volunteering day</a> is complete<small>3 h ago · Petropavl</small></span></li>
+        <li><span class="dot"></span><span><a href="#events">CV clinic with alumni</a> is now on the Hub<small>5 h ago · Almaty</small></span></li>
+        <li><span class="dot"></span><span>A new campus joined the network: Yerevan<small>yesterday</small></span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="campuses">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">Campus network</p><h2>Students from nine campuses</h2></div>
+      </div>
+      <div class="campuses">
+        <span class="campus">Almaty <small>KZ</small></span>
+        <span class="campus">Petropavl <small>KZ</small></span>
+        <span class="campus">Tbilisi <small>GE</small></span>
+        <span class="campus">Yerevan <small>AM</small></span>
+        <span class="campus">Tashkent <small>UZ</small></span>
+        <span class="campus">Bishkek <small>KG</small></span>
+        <span class="campus">Baku <small>AZ</small></span>
+        <span class="campus">Astana <small>KZ</small></span>
+        <span class="campus">Shymkent <small>KZ</small></span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <nav aria-label="Footer">
+      <a href="#top">About</a><a href="#pillars">Academic</a><a href="#pillars">International</a><a href="#ideas">Community</a><a href="#feed">Personal</a><a href="#campuses">Forum</a>
+    </nav>
+    <p>ModernHub IS is an independent student project and is not affiliated with, endorsed by, or sponsored by any university.</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js" integrity="sha384-XmJ9SoHtVOHoQUcKvFAzVXwdkKo1Ie3bhmSoIAkcdsHGaIrVJIkmozyq0FJeb/Ly" crossorigin="anonymous"></script>
+<script type="module" src="page.js"></script>
+</body>
+</html>
