@@ -1,0 +1,30 @@
+# Stage 1 audit — 2026-10-06T17:49Z
+
+## Source audit
+audit clean: 76 files checked, engine matches the mock
+
+## Token contrast
+dark  --fg           on --bg       17.59
+dark  --fg           on --surface  16.14
+dark  --muted        on --bg        7.72
+dark  --muted        on --surface   7.08
+dark  --accent-text  on --bg        6.74
+dark  --accent-text  on --surface   6.18
+dark  --on-accent    on --accent    4.52
+light --fg           on --bg       17.59
+light --fg           on --surface  19.66
+light --muted        on --bg        5.87
+light --muted        on --surface   6.57
+light --accent-text  on --bg        5.77
+light --accent-text  on --surface   6.45
+light --on-accent    on --accent    6.45
+all pairs pass
+
+## End-to-end
+[34/35] [chromium] › tests/e2e/shell.spec.ts:16:5 › footer carries the independence statement
+[35/35] [chromium] › tests/e2e/shell.spec.ts:23:5 › unknown pages show a 404 with a way back
+  35 passed (1.2m)
+
+## Backend (pytest, real stores)
+................................................                         [100%]
+120 passed in 27.64s
