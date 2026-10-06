@@ -23,3 +23,8 @@ export function safeNext(next: string | undefined): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/personal";
   return next;
 }
+
+// Route ids are UUIDs; anything else is a 404 before the API is even asked.
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}

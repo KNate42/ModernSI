@@ -31,3 +31,13 @@ export async function apiTry<T>(path: string): Promise<T | null> {
 }
 
 export const getMe = cache(() => apiTry<Me>("/api/auth/me"));
+
+// For a page's main record: a missing record becomes the 404 page, any other failure the error page.
+export async function apiFind<T>(path: string): Promise<T | null> {
+  try {
+    return await apiGet<T>(path);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
