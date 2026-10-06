@@ -7,7 +7,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from modernsi.core.config import get_settings
+from modernsi.core.errors import install_error_handlers
 from modernsi.core.health import router as health_router
+from modernsi.core.security import install_origin_check
 from modernsi.core.stores import stores
 from modernsi.feed.schema import ensure_schema
 
@@ -32,6 +34,8 @@ def create_app(settings=None):
 
     app = FastAPI(title="ModernSI API", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None)
     app.state.settings = settings
+    install_error_handlers(app)
+    install_origin_check(app, settings)
     for router in routers():
         app.include_router(router)
     return app
