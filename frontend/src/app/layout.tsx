@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { IntroOverlay } from "@/components/intro/IntroOverlay";
 import { apiTry, getMe } from "@/lib/server-api";
 import type { Profile } from "@/lib/types";
 import "./tokens.css";
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
       <body>
+        <IntroOverlay />
         <Header me={me} />
         <main id="main">{children}</main>
         <Footer />
