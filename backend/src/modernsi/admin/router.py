@@ -7,13 +7,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from modernsi.admin.schemas import (
-    AdminUserOut, ApproveIn, DomainIn, DomainOut, DomainPatch, DomainRequestAdminOut, RoleIn,
+    AdminUserOut, ApproveIn, DomainIn, DomainOut, DomainPatch, DomainRequestAdminOut, HiddenOut, ReportOut, RoleIn,
 )
 from modernsi.auth import service as auth_service
 from modernsi.auth.deps import require_roles
 from modernsi.campuses import service as campuses_service
 from modernsi.core.db import get_db
 from modernsi.core.deps import get_config, get_hub
+from modernsi.ideas import service as ideas_service
 
 admin_only = require_roles("admin")
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(admin_only)])
@@ -74,3 +75,23 @@ async def block(user_id: UUID, admin=Depends(admin_only), db=Depends(get_db), hu
 @router.post("/users/{user_id}/unblock", response_model=AdminUserOut)
 async def unblock(user_id: UUID, db=Depends(get_db)):
     return admin_user_out(await auth_service.unblock_user(db, user_id))
+
+
+@router.get("/reports", response_model=list[ReportOut])
+async def reports(db=Depends(get_db)):
+    return await ideas_service.list_reports(db)
+
+
+@router.post("/reports/{report_id}/resolve")
+async def resolve_report(report_id: int, db=Depends(get_db)):
+    return await ideas_service.resolve_report(db, report_id)
+
+
+@router.post("/ideas/{idea_id}/hide", response_model=HiddenOut)
+async def hide_idea(idea_id: UUID, db=Depends(get_db)):
+    return await ideas_service.set_hidden(db, idea_id, True)
+
+
+@router.post("/ideas/{idea_id}/unhide", response_model=HiddenOut)
+async def unhide_idea(idea_id: UUID, db=Depends(get_db)):
+    return await ideas_service.set_hidden(db, idea_id, False)

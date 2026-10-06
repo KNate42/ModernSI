@@ -71,3 +71,18 @@ class VoteOut(BaseModel):
     vote_count: int
     status: str
     my_vote: bool
+
+
+class DecisionIn(BaseModel):
+    decision: Literal["approve", "reject", "needs_changes"]
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class TeamOut(BaseModel):
+    team_size: int
+    in_team: bool
+    status: str
+
+
+class ReportIn(BaseModel):
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=500)]

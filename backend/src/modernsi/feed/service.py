@@ -59,8 +59,13 @@ async def list_feed(hub, db, cursor=None, limit=20, actor_id=None):
     items = [feed_item(row) for row in rows[:limit]]
     next_cursor = None
     if len(rows) > limit and items:
+        # the cursor comes from the unfiltered page, so hiding never makes pagination skip rows
         next_cursor = f"{items[-1]['at'].isoformat()}|{items[-1]['id']}"
-    return {"items": items, "next_cursor": next_cursor}
+    # imported here: ideas imports feed (emit), so a top-level import would be circular
+    from modernsi.ideas.service import hidden_idea_ids
+
+    hidden = await hidden_idea_ids(db, {item["idea_id"] for item in items if item["idea_id"]})
+    return {"items": [item for item in items if item["idea_id"] not in hidden], "next_cursor": next_cursor}
 
 
 async def stats(hub, settings):

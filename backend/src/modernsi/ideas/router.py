@@ -7,12 +7,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from modernsi.auth.deps import active_user, optional_user
+from modernsi.auth.deps import active_user, optional_user, require_roles
 from modernsi.core.db import get_db
 from modernsi.core.deps import get_config, get_hub
 from modernsi.core.ratelimit import hit
 from modernsi.ideas import service
-from modernsi.ideas.schemas import Category, IdeaCreate, IdeaDetail, IdeaPage, IdeaUpdate, Scope, Status, VoteOut
+from modernsi.ideas.schemas import (
+    Category, DecisionIn, IdeaCreate, IdeaDetail, IdeaPage, IdeaUpdate, ReportIn, Scope, Status, TeamOut, VoteOut,
+)
 
 router = APIRouter(prefix="/api/ideas", tags=["ideas"])
 
@@ -59,3 +61,29 @@ async def vote(idea_id: UUID, user=Depends(active_user), db=Depends(get_db), hub
 async def unvote(idea_id: UUID, user=Depends(active_user), db=Depends(get_db), hub=Depends(get_hub), settings=Depends(get_config)):
     await hit(hub.redis, f"votes:{user.id}", settings.rl_votes_per_minute, 60)
     return await service.unvote(db, user, idea_id)
+
+
+@router.post("/{idea_id}/decision", response_model=IdeaDetail)
+async def decision(idea_id: UUID, data: DecisionIn, reviewer=Depends(require_roles("student_gov", "admin")), db=Depends(get_db), settings=Depends(get_config)):
+    return await service.decide(db, settings, reviewer, idea_id, data.decision, data.note)
+
+
+@router.post("/{idea_id}/resubmit", response_model=IdeaDetail)
+async def resubmit(idea_id: UUID, user=Depends(active_user), db=Depends(get_db), settings=Depends(get_config)):
+    return await service.resubmit(db, settings, user, idea_id)
+
+
+@router.post("/{idea_id}/team", response_model=TeamOut)
+async def join_team(idea_id: UUID, user=Depends(active_user), db=Depends(get_db), settings=Depends(get_config)):
+    return await service.join_team(db, settings, user, idea_id)
+
+
+@router.delete("/{idea_id}/team", response_model=TeamOut)
+async def leave_team(idea_id: UUID, user=Depends(active_user), db=Depends(get_db)):
+    return await service.leave_team(db, user, idea_id)
+
+
+@router.post("/{idea_id}/report", status_code=201)
+async def report(idea_id: UUID, data: ReportIn, user=Depends(active_user), db=Depends(get_db)):
+    await service.report_idea(db, user, idea_id, data.reason)
+    return {}

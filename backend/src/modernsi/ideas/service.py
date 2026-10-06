@@ -5,6 +5,7 @@ This work made by Anfinogentov Nikita
 from datetime import timedelta
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
 from modernsi.auth.models import User
 from modernsi.auth.service import author_out
@@ -12,7 +13,7 @@ from modernsi.core.db import utcnow
 from modernsi.core.errors import api_error
 from modernsi.core.markdown import render_markdown
 from modernsi.feed.outbox import emit
-from modernsi.ideas.models import Idea, IdeaTeamMember, IdeaVote
+from modernsi.ideas.models import Idea, IdeaReport, IdeaTeamMember, IdeaVote
 from modernsi.mail import templates
 from modernsi.mail.queue import enqueue
 
@@ -182,3 +183,120 @@ async def unvote(db, user, idea_id):
         idea.vote_count -= 1
     await db.commit()
     return {"vote_count": idea.vote_count, "status": idea.status, "my_vote": False}
+
+
+async def after_team_change(db, settings, idea):
+    # the "team is ready" moment fires once, even if people leave and join again later
+    if idea.team_size >= settings.team_min and idea.team_formed_at is None:
+        idea.team_formed_at = utcnow()
+        emit(db, "team_formed", idea_id=idea.id, campus_label=idea.campus_label, data={"idea_title": idea.title})
+        enqueue(db, idea.author.email, *templates.team_formed(idea.title, idea_url(settings, idea)))
+
+
+async def decide(db, settings, reviewer, idea_id, decision, note):
+    idea = await lock_idea(db, idea_id)
+    if idea.status != "in_review":
+        raise api_error(409, "not_in_review", "This idea is not waiting for review")
+    note = (note or "").strip() or None
+    if decision in ("reject", "needs_changes") and note is None:
+        raise api_error(422, "note_required", "Explain the decision in a short note")
+    idea.decided_at = utcnow()
+    idea.review_note = note
+    if decision == "approve":
+        idea.status = "forming_team"
+        db.add(IdeaTeamMember(idea_id=idea.id, user_id=idea.author_id))
+        idea.team_size = 1
+        await after_team_change(db, settings, idea)
+    else:
+        idea.status = "rejected" if decision == "reject" else "needs_changes"
+    emit(db, "idea_decided", actor_id=reviewer.id, idea_id=idea.id, campus_label=idea.campus_label,
+         data={"idea_title": idea.title, "decision": decision})
+    enqueue(db, idea.author.email, *templates.idea_decided(idea.title, decision, note, idea_url(settings, idea)))
+    await db.commit()
+    return await get_detail(db, settings, idea.id, reviewer)
+
+
+async def resubmit(db, settings, user, idea_id):
+    idea = await lock_idea(db, idea_id)
+    if idea.author_id != user.id:
+        raise api_error(403, "not_author", "Only the author can send this idea back")
+    if idea.status != "needs_changes":
+        raise api_error(409, "not_needs_changes", "This idea is not waiting for changes")
+    # the threshold was already reached once, so it goes straight back to review
+    idea.status = "in_review"
+    idea.review_started_at = utcnow()
+    idea.review_note = None
+    await db.commit()
+    return await get_detail(db, settings, idea.id, user)
+
+
+async def join_team(db, settings, user, idea_id):
+    idea = await lock_idea(db, idea_id)
+    if idea.status != "forming_team":
+        raise api_error(409, "team_closed", "This idea is not gathering a team now")
+    if await db.get(IdeaTeamMember, (idea.id, user.id)) is None:
+        db.add(IdeaTeamMember(idea_id=idea.id, user_id=user.id))
+        idea.team_size += 1
+        await after_team_change(db, settings, idea)
+    await db.commit()
+    return {"team_size": idea.team_size, "in_team": True, "status": idea.status}
+
+
+async def leave_team(db, user, idea_id):
+    idea = await lock_idea(db, idea_id)
+    if idea.status != "forming_team":
+        raise api_error(409, "team_closed", "This idea is not gathering a team now")
+    if idea.author_id == user.id:
+        raise api_error(409, "author_cannot_leave", "The author stays in the team")
+    member = await db.get(IdeaTeamMember, (idea.id, user.id))
+    if member is not None:
+        await db.delete(member)
+        idea.team_size -= 1
+    await db.commit()
+    return {"team_size": idea.team_size, "in_team": False, "status": idea.status}
+
+
+async def report_idea(db, user, idea_id, reason):
+    idea = await load_idea(db, idea_id, user)
+    db.add(IdeaReport(idea_id=idea.id, reporter_id=user.id, reason=reason))
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise api_error(409, "already_reported", "You have already reported this idea")
+
+
+async def set_hidden(db, idea_id, hidden):
+    idea = await db.get(Idea, idea_id)
+    if idea is None:
+        raise not_found()
+    idea.is_hidden = hidden
+    await db.commit()
+    return {"id": idea.id, "is_hidden": idea.is_hidden}
+
+
+async def list_reports(db):
+    rows = await db.execute(
+        select(IdeaReport, Idea.title).join(Idea, Idea.id == IdeaReport.idea_id)
+        .where(IdeaReport.resolved_at.is_(None)).order_by(IdeaReport.created_at)
+    )
+    return [
+        {"id": report.id, "idea_id": report.idea_id, "idea_title": title, "reason": report.reason, "created_at": report.created_at}
+        for report, title in rows.all()
+    ]
+
+
+async def resolve_report(db, report_id):
+    report = await db.get(IdeaReport, report_id)
+    if report is None:
+        raise api_error(404, "report_not_found", "There is no such report")
+    report.resolved_at = utcnow()
+    await db.commit()
+    return {"id": report.id}
+
+
+async def hidden_idea_ids(db, idea_ids):
+    if not idea_ids:
+        return set()
+    rows = await db.execute(select(Idea.id).where(Idea.id.in_(idea_ids), Idea.is_hidden.is_(True)))
+    return set(rows.scalars().all())

@@ -61,3 +61,16 @@ class AdminUserOut(BaseModel):
     role: str
     status: str
     created_at: datetime
+
+
+class ReportOut(BaseModel):
+    id: int
+    idea_id: UUID
+    idea_title: str
+    reason: str
+    created_at: datetime
+
+
+class HiddenOut(BaseModel):
+    id: UUID
+    is_hidden: bool
