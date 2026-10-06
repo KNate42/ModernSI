@@ -238,3 +238,9 @@ main { min-height: 60vh; }
 .note { border-left: 3px solid var(--accent-text); padding: 8px 0 8px 14px; margin: 0; }
 .select { appearance: auto; }
 .pager { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 24px; }
+
+/* events */
+.event-when { font-size: 18px; font-weight: 700; color: var(--accent-text); }
+.event .going { margin-top: 10px; font-size: 14px; color: var(--muted); }
+.form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 560px) { .form .row { grid-template-columns: 1fr; } }
