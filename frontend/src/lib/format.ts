@@ -32,3 +32,13 @@ export const roleLabels: Record<Role, string> = {
 export function scopeText(scope: Scope, campus: string | null): string {
   return scope === "network" ? "whole network" : campus ?? "own campus";
 }
+
+// groups of categories share a soft tint, so a list of ideas reads as a colourful set, not a grey table
+export const categoryTints: Record<Category, "violet" | "sky" | "mint" | "rose"> = {
+  event: "violet",
+  academic: "sky",
+  research: "sky",
+  club: "mint",
+  volunteering: "mint",
+  campus_life: "rose",
+};

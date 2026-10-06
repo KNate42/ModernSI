@@ -16,7 +16,8 @@ export const INTRO_TIMING = {
 };
 
 const THREAD_COUNT = 16;
-const GLOW = "rgba(155, 133, 255, 0.9)";
+// lilac, sky, mint and orchid: the threads carry colour, never plain white
+const THREAD_COLOURS = ["#B9A8FF", "#8FC4FF", "#8EF0CC", "#F5A8EA"];
 
 function makeThreads(count) {
   const threads = [];
@@ -28,6 +29,7 @@ function makeThreads(count) {
       length: 0.25 + Math.random() * 0.2,
       speed: 1 + Math.random() * 0.35,
       width: 1 + Math.random() * 1.2,
+      colour: THREAD_COLOURS[i % THREAD_COLOURS.length],
     });
   }
   return threads;
@@ -89,9 +91,9 @@ function createRenderer(canvas) {
         if (k === 0) ctx.moveTo(p.x, p.y);
         else ctx.lineTo(p.x, p.y);
       }
-      ctx.shadowColor = GLOW;
+      ctx.shadowColor = thread.colour;
       ctx.shadowBlur = 14;
-      ctx.strokeStyle = "rgba(244, 242, 238, 0.85)";
+      ctx.strokeStyle = thread.colour;
       ctx.lineWidth = thread.width;
       ctx.stroke();
     }

@@ -7,7 +7,7 @@ import type { Profile } from "@/lib/types";
 export function ThemeToggle({ signedIn }: { signedIn: boolean }) {
   async function toggle() {
     const root = document.documentElement;
-    const current = root.dataset.theme ?? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    const current = root.dataset.theme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     const next = current === "light" ? "dark" : "light";
     root.dataset.theme = next;
     try {

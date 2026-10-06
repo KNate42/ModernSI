@@ -1,7 +1,7 @@
 // Idea card for lists: category, status, progress and author.
 // This work made by Anfinogentov Nikita
 import Link from "next/link";
-import { categoryLabels, scopeText, statusLabels } from "@/lib/format";
+import { categoryLabels, categoryTints, scopeText, statusLabels } from "@/lib/format";
 import type { IdeaCard as IdeaCardData } from "@/lib/types";
 import { Progress } from "./Progress";
 
@@ -13,7 +13,7 @@ export function supportText(idea: IdeaCardData): string {
 
 export function IdeaCard({ idea }: { idea: IdeaCardData }) {
   return (
-    <Link className="card idea-card" href={`/ideas/${idea.id}`}>
+    <Link className={`card idea-card tint-${categoryTints[idea.category]}`} href={`/ideas/${idea.id}`}>
       <span className="badge">{categoryLabels[idea.category]} · {scopeText(idea.scope, idea.campus_label)}</span>{" "}
       <span className="badge badge-accent">{statusLabels[idea.status]}</span>
       <h3>{idea.title}</h3>

@@ -39,7 +39,7 @@ When the bundled Playwright browser is not installed, point `CHROMIUM_PATH` at a
   - forbidden colours and fonts;
   - empty links;
   - an intro engine that differs from the approved mock.
-- `python3 ../design/mock/contrast.py src/app/tokens.css` checks the WCAG contrast of the theme tokens.
+- `python3 ../design/mock/contrast.py src/app/tokens.css` checks the WCAG contrast of the theme tokens, and that the palette stays colourful: no black-and-white, no warm peach or beige backgrounds.
 
 ## Production notes
 

@@ -73,7 +73,7 @@ test("a guest's theme survives a reload without a flash", async ({ page }) => {
   });
   await page.reload();
   expect(await page.evaluate(() => (window as unknown as { themeAtParse?: string }).themeAtParse)).toBe("light");
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(244, 242, 238)");
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(241, 239, 255)");
 });
 
 test("a member's theme follows them to another browser", async ({ page, browser }) => {
