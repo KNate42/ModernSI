@@ -85,3 +85,14 @@ def create_admin_command(email: str = typer.Option(...), name: str = typer.Optio
             typer.echo(f"admin {user.email} created")
 
     run_with_hub(work)
+
+
+@cli.command()
+def worker():
+    """Run the background worker (outbox, mail, periodic transitions)."""
+    import logging
+
+    from modernsi.worker import run_worker
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    run_with_hub(run_worker)

@@ -4,7 +4,7 @@ This work made by Anfinogentov Nikita
 """
 from datetime import timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 
 from modernsi.auth.models import User
@@ -300,3 +300,17 @@ async def hidden_idea_ids(db, idea_ids):
         return set()
     rows = await db.execute(select(Idea.id).where(Idea.id.in_(idea_ids), Idea.is_hidden.is_(True)))
     return set(rows.scalars().all())
+
+
+async def expire_ideas(db):
+    result = await db.execute(update(Idea).where(Idea.status == "open", Idea.expires_at < utcnow()).values(status="expired"))
+    await db.commit()
+    return result.rowcount
+
+
+async def mark_done(db, idea_ids):
+    if not idea_ids:
+        return 0
+    result = await db.execute(update(Idea).where(Idea.id.in_(idea_ids), Idea.status == "live").values(status="done"))
+    await db.commit()
+    return result.rowcount
