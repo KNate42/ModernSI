@@ -244,3 +244,10 @@ main { min-height: 60vh; }
 .event .going { margin-top: 10px; font-size: 14px; color: var(--muted); }
 .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 560px) { .form .row { grid-template-columns: 1fr; } }
+
+/* homepage additions */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.starting { margin-top: 48px; color: var(--muted); max-width: 52ch; }
+.starting a { font-weight: 700; }
+.ideas-grid.solo { grid-template-columns: minmax(0, 720px); }
+.spotlight .eyebrow { margin: 0 0 12px; }

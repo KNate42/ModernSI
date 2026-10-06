@@ -58,6 +58,10 @@ test("the author puts the idea on the Hub and the time comes back as typed", asy
 
   await page.goto("/events");
   await expect(page.getByRole("link", { name: new RegExp(title) })).toBeVisible();
+
+  // the whole path ends on the homepage
+  await page.goto("/");
+  await expect(page.locator("#events")).toContainText(title);
 });
 
 test("an event that ends before it starts is refused with the API's message", async ({ page }) => {
