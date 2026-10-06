@@ -11,4 +11,10 @@ ModernSI is an independent student project and is not affiliated with, endorsed 
 - `infra/` — Docker Compose files for the stores
 - `docs/` — specs and implementation plans
 
+## GitHub Pages
+
+Pages serves only the repository root, so it shows the static mock, not the app: the backend and the Next.js site need a real host.
+`index.html`, `styles.css`, `page.js`, `intro.js` and `.nojekyll` in the root are a copy of `design/mock`, which stays the source of truth.
+After editing the mock, run `python3 design/sync_pages.py`; `python3 design/sync_pages.py --check` tells whether the copy has drifted.
+
 Author: Anfinogentov Nikita
