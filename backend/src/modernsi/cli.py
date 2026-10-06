@@ -49,3 +49,16 @@ def migrate():
 
     run_with_hub(clickhouse)
     typer.echo("migrations applied")
+
+
+@cli.command("add-domain")
+def add_domain_command(domain: str, label: str = typer.Option(..., help="Campus label shown next to names"), country: str = typer.Option(..., help="ISO country code, e.g. KZ")):
+    """Allow sign-ups from DOMAIN (and its subdomains) under a campus label."""
+    from modernsi.campuses.service import add_domain
+
+    async def work(hub):
+        async with hub.sessions() as db:
+            row = await add_domain(db, domain, label, country)
+            typer.echo(f"allowed {row.domain} as {row.campus_label} ({row.country_code})")
+
+    run_with_hub(work)

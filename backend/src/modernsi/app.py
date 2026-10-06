@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from modernsi.campuses.router import router as campuses_router
 from modernsi.core.config import get_settings
 from modernsi.core.errors import install_error_handlers
 from modernsi.core.health import router as health_router
@@ -16,7 +17,7 @@ from modernsi.feed.schema import ensure_schema
 
 def routers():
     # There I keep every module router in one list; each module task appends its own line
-    return [health_router]
+    return [health_router, campuses_router]
 
 
 def create_app(settings=None):
