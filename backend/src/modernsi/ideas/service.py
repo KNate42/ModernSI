@@ -13,6 +13,8 @@ from modernsi.core.errors import api_error
 from modernsi.core.markdown import render_markdown
 from modernsi.feed.outbox import emit
 from modernsi.ideas.models import Idea, IdeaTeamMember, IdeaVote
+from modernsi.mail import templates
+from modernsi.mail.queue import enqueue
 
 editable = ("open", "needs_changes")
 
@@ -145,3 +147,38 @@ async def update_idea(db, settings, user, idea_id, data):
     idea.updated_at = utcnow()
     await db.commit()
     return await get_detail(db, settings, idea.id, user)
+
+
+def idea_url(settings, idea):
+    return f"{settings.site_url}/ideas/{idea.id}"
+
+
+async def vote(db, settings, user, idea_id):
+    idea = await lock_idea(db, idea_id)
+    if idea.status != "open":
+        raise api_error(409, "voting_closed", "This idea is not collecting votes now")
+    if idea.author_id == user.id:
+        raise api_error(409, "own_idea", "You cannot vote for your own idea")
+    if await db.get(IdeaVote, (idea.id, user.id)) is None:
+        db.add(IdeaVote(idea_id=idea.id, user_id=user.id))
+        idea.vote_count += 1
+        if idea.vote_count >= settings.vote_threshold:
+            # the row lock above makes this branch run exactly once, whatever the concurrency
+            idea.status = "in_review"
+            idea.review_started_at = utcnow()
+            emit(db, "idea_reached_review", idea_id=idea.id, campus_label=idea.campus_label, data={"idea_title": idea.title})
+            enqueue(db, idea.author.email, *templates.idea_in_review(idea.title, idea_url(settings, idea)))
+    await db.commit()
+    return {"vote_count": idea.vote_count, "status": idea.status, "my_vote": True}
+
+
+async def unvote(db, user, idea_id):
+    idea = await lock_idea(db, idea_id)
+    if idea.status != "open":
+        raise api_error(409, "voting_closed", "This idea is not collecting votes now")
+    existing = await db.get(IdeaVote, (idea.id, user.id))
+    if existing is not None:
+        await db.delete(existing)
+        idea.vote_count -= 1
+    await db.commit()
+    return {"vote_count": idea.vote_count, "status": idea.status, "my_vote": False}

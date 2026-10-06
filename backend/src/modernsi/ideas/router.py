@@ -12,7 +12,7 @@ from modernsi.core.db import get_db
 from modernsi.core.deps import get_config, get_hub
 from modernsi.core.ratelimit import hit
 from modernsi.ideas import service
-from modernsi.ideas.schemas import Category, IdeaCreate, IdeaDetail, IdeaPage, IdeaUpdate, Scope, Status
+from modernsi.ideas.schemas import Category, IdeaCreate, IdeaDetail, IdeaPage, IdeaUpdate, Scope, Status, VoteOut
 
 router = APIRouter(prefix="/api/ideas", tags=["ideas"])
 
@@ -47,3 +47,15 @@ async def read(idea_id: UUID, viewer=Depends(optional_user), db=Depends(get_db),
 @router.patch("/{idea_id}", response_model=IdeaDetail)
 async def edit(idea_id: UUID, data: IdeaUpdate, user=Depends(active_user), db=Depends(get_db), settings=Depends(get_config)):
     return await service.update_idea(db, settings, user, idea_id, data)
+
+
+@router.post("/{idea_id}/vote", response_model=VoteOut)
+async def vote(idea_id: UUID, user=Depends(active_user), db=Depends(get_db), hub=Depends(get_hub), settings=Depends(get_config)):
+    await hit(hub.redis, f"votes:{user.id}", settings.rl_votes_per_minute, 60)
+    return await service.vote(db, settings, user, idea_id)
+
+
+@router.delete("/{idea_id}/vote", response_model=VoteOut)
+async def unvote(idea_id: UUID, user=Depends(active_user), db=Depends(get_db), hub=Depends(get_hub), settings=Depends(get_config)):
+    await hit(hub.redis, f"votes:{user.id}", settings.rl_votes_per_minute, 60)
+    return await service.unvote(db, user, idea_id)

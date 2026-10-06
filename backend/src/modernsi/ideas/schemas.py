@@ -65,3 +65,9 @@ class IdeaDetail(IdeaCard):
 class IdeaPage(BaseModel):
     items: list[IdeaCard]
     next_cursor: str | None
+
+
+class VoteOut(BaseModel):
+    vote_count: int
+    status: str
+    my_vote: bool
