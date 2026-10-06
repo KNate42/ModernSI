@@ -1,5 +1,6 @@
 """campuses
 
+
 This work made by Anfinogentov Nikita
 
 Revision ID: 561e08574c47
