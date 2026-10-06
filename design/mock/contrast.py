@@ -37,7 +37,8 @@ def read_block(css, selector):
 
 
 def main():
-    css = Path(__file__).with_name("styles.css").read_text()
+    # an optional path lets me check the app's tokens.css with the same rules
+    css = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).with_name("styles.css")).read_text()
     failures = []
     for colour in forbidden:
         if colour.lower() in css.lower():

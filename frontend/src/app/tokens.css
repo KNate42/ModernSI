@@ -1,0 +1,46 @@
+/*
+ * Theme tokens, copied verbatim from the approved mock (design/mock/styles.css).
+ * This work made by Anfinogentov Nikita
+ */
+
+:root {
+  --bg: #0B0B0D;
+  --surface: #16161A;
+  --border: #2A2A31;
+  --fg: #F4F2EE;
+  --muted: #A3A1AB;
+  --accent: #7C5CFF;
+  --on-accent: #0B0B0D;
+  --accent-text: #9B85FF;
+  --ink: #0B0B0D;
+  --radius: 14px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --maxw: 1200px;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F4F2EE;
+    --surface: #FFFFFF;
+    --border: #DAD7D0;
+    --fg: #0B0B0D;
+    --muted: #5E5C66;
+    --accent: #5B3DE6;
+    --on-accent: #FFFFFF;
+    --accent-text: #5B3DE6;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #F4F2EE;
+  --surface: #FFFFFF;
+  --border: #DAD7D0;
+  --fg: #0B0B0D;
+  --muted: #5E5C66;
+  --accent: #5B3DE6;
+  --on-accent: #FFFFFF;
+  --accent-text: #5B3DE6;
+  color-scheme: light;
+}
