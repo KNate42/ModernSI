@@ -1,5 +1,5 @@
 {
-  "name": "modernhub-mock-checks",
+  "name": "modernsi-mock-checks",
   "private": true,
   "type": "module",
   "devDependencies": { "@playwright/test": "1.63.0" }

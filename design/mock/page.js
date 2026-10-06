@@ -4,7 +4,7 @@
  */
 import { playIntro } from "./intro.js";
 
-const SEEN_KEY = "mh_intro_seen";
+const SEEN_KEY = "msi_intro_seen";
 
 function introSeen() {
   try {
@@ -73,7 +73,7 @@ function setupTheme() {
   const button = document.getElementById("theme-toggle");
   const root = document.documentElement;
   try {
-    const saved = localStorage.getItem("mh_theme");
+    const saved = localStorage.getItem("msi_theme");
     if (saved === "light" || saved === "dark") root.dataset.theme = saved;
   } catch {
     // no storage: follow the system theme
@@ -83,7 +83,7 @@ function setupTheme() {
     const next = current === "light" ? "dark" : "light";
     root.dataset.theme = next;
     try {
-      localStorage.setItem("mh_theme", next);
+      localStorage.setItem("msi_theme", next);
     } catch {
       // the choice just will not survive a reload
     }

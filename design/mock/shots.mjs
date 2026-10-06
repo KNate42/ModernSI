@@ -2,6 +2,7 @@
  * Mock checks: intro timing and skip behaviour, review-focus edge cases, screenshots of both themes.
  * Needs the mock served on :4310 (`python3 -m http.server 4310` from design/mock) and internet access
  * (gsap comes from cdnjs, Manrope from Google Fonts). The intro is measured on its own timeline, not from page load.
+ * Offline helpers: CHROMIUM_PATH points at a ready browser, GSAP_FILE serves a local gsap.min.js instead of cdnjs.
  * This work made by Anfinogentov Nikita
  */
 import { chromium } from "@playwright/test";
@@ -18,7 +19,7 @@ const check = (ok, label) => {
 };
 
 mkdirSync(SHOTS, { recursive: true });
-const browser = await chromium.launch();
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 
 // Runs in the page before any page script: records when the intro scroll lock is set and released, when #intro
 // leaves the DOM, and whether the overlay was really on screen. With autoSkip it also clicks Skip twice, at once.
@@ -66,6 +67,10 @@ function instrumentIntro({ autoSkip }) {
 async function fresh(options = {}, { autoSkip = false } = {}) {
   const context = await browser.newContext(options);
   contexts.push(context);
+  if (process.env.GSAP_FILE) {
+    // There I answer the cdnjs request from disk when the real CDN is not reachable
+    await context.route("https://cdnjs.cloudflare.com/ajax/libs/gsap/**", (route) => route.fulfill({ path: process.env.GSAP_FILE, contentType: "application/javascript" }));
+  }
   await context.addInitScript(instrumentIntro, { autoSkip });
   const page = await context.newPage();
   const errors = [];
@@ -258,7 +263,7 @@ try {
     for (const width of [1440, 360]) {
       await block(`${scheme} ${width}px`, async () => {
         const { page } = await fresh({ viewport: { width, height: 900 }, colorScheme: scheme });
-        await page.addInitScript(() => sessionStorage.setItem("mh_intro_seen", "1"));
+        await page.addInitScript(() => sessionStorage.setItem("msi_intro_seen", "1"));
         await page.goto(BASE);
         await page.evaluate(() => document.fonts.ready);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

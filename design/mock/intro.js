@@ -1,5 +1,5 @@
 /*
- * Intro engine: "ModernHub IS" collapses into a dot, the dot bursts into light threads, "Welcome!" appears,
+ * Intro engine: "ModernSI" collapses into a dot, the dot bursts into light threads, "Welcome!" appears,
  * then the overlay dissolves. Framework-free so the mock and the Next.js app share it.
  * This work made by Anfinogentov Nikita
  */
