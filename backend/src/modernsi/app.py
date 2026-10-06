@@ -18,12 +18,13 @@ from modernsi.core.stores import stores
 from modernsi.feed.requestlog import install_request_log, request_log
 from modernsi.feed.router import router as feed_router
 from modernsi.feed.schema import ensure_schema
+from modernsi.ideas.router import router as ideas_router
 from modernsi.profiles.router import router as profiles_router
 
 
 def routers():
     # There I keep every module router in one list; each module task appends its own line
-    return [health_router, campuses_router, auth_router, admin_router, profiles_router, feed_router]
+    return [health_router, campuses_router, auth_router, admin_router, profiles_router, feed_router, ideas_router]
 
 
 def create_app(settings=None):
