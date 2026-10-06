@@ -8,6 +8,8 @@ from sqlalchemy import select
 
 from modernsi.campuses.models import DomainRequest, EmailDomain
 from modernsi.core.errors import api_error
+from modernsi.mail import templates
+from modernsi.mail.queue import enqueue
 
 domain_pattern = re.compile(r"^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
 
@@ -67,3 +69,71 @@ async def create_request(db, data):
     db.add(row)
     await db.commit()
     return row
+
+
+async def list_domains(db):
+    return (await db.execute(select(EmailDomain).order_by(EmailDomain.domain))).scalars().all()
+
+
+async def patch_domain(db, domain_id, data):
+    row = await db.get(EmailDomain, domain_id)
+    if row is None:
+        raise api_error(404, "domain_not_found", "There is no such domain")
+    if data.campus_label is not None:
+        row.campus_label = data.campus_label.strip()
+    if data.country_code is not None:
+        row.country_code = data.country_code.upper()
+    if data.is_active is not None:
+        row.is_active = data.is_active
+    await db.commit()
+    return row
+
+
+async def list_requests(db, status):
+    return (await db.execute(
+        select(DomainRequest).where(DomainRequest.status == status).order_by(DomainRequest.created_at)
+    )).scalars().all()
+
+
+async def get_request(db, request_id):
+    row = await db.get(DomainRequest, request_id)
+    if row is None:
+        raise api_error(404, "request_not_found", "There is no such request")
+    return row
+
+
+async def approve_request(db, settings, request_id, campus_label, country_code):
+    row = await get_request(db, request_id)
+    await add_domain(db, row.domain, campus_label, country_code)
+    # everyone who asked for the same domain gets the good news at once
+    waiting = (await db.execute(select(DomainRequest).where(
+        DomainRequest.domain == row.domain, DomainRequest.status == "pending"
+    ))).scalars().all()
+    subject, body = templates.domain_approved(row.domain, settings.site_url)
+    for item in waiting:
+        item.status = "approved"
+        enqueue(db, item.requester_email, subject, body)
+    await db.commit()
+    return row
+
+
+async def reject_request(db, request_id):
+    row = await get_request(db, request_id)
+    row.status = "rejected"
+    await db.commit()
+    return row
+
+
+async def list_campuses(db):
+    # imported here: auth depends on campuses, so a top-level import would be circular
+    from modernsi.auth.service import active_users_by_domain
+
+    counts = await active_users_by_domain(db)
+    grouped = {}
+    for row in await list_domains(db):
+        if not row.is_active:
+            continue
+        key = (row.campus_label, row.country_code)
+        grouped[key] = grouped.get(key, 0) + counts.get(row.id, 0)
+    campuses = [{"campus_label": label, "country_code": country, "students": students} for (label, country), students in grouped.items()]
+    return sorted(campuses, key=lambda item: (-item["students"], item["campus_label"]))

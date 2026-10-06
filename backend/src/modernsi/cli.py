@@ -62,3 +62,26 @@ def add_domain_command(domain: str, label: str = typer.Option(..., help="Campus 
             typer.echo(f"allowed {row.domain} as {row.campus_label} ({row.country_code})")
 
     run_with_hub(work)
+
+
+@cli.command("create-admin")
+def create_admin_command(email: str = typer.Option(...), name: str = typer.Option(...)):
+    """Create the first admin account (asks for the password)."""
+    from modernsi.auth.service import create_admin
+    from modernsi.core.errors import api_error
+
+    password = typer.prompt("Password", hide_input=True, confirmation_prompt=True)
+    if len(password) < 10:
+        typer.echo("Ooops.. the password needs at least 10 characters")
+        raise typer.Exit(1)
+
+    async def work(hub):
+        async with hub.sessions() as db:
+            try:
+                user = await create_admin(db, email, name, password)
+            except api_error as exc:
+                typer.echo("Ooops.. " + exc.message)
+                raise typer.Exit(1)
+            typer.echo(f"admin {user.email} created")
+
+    run_with_hub(work)

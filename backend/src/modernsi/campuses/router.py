@@ -5,7 +5,7 @@ This work made by Anfinogentov Nikita
 from fastapi import APIRouter, Depends, Request
 
 from modernsi.campuses import service
-from modernsi.campuses.schemas import DomainRequestCreate, DomainRequestOut
+from modernsi.campuses.schemas import CampusOut, DomainRequestCreate, DomainRequestOut
 from modernsi.core.db import get_db
 from modernsi.core.deps import get_config, get_hub
 from modernsi.core.ratelimit import hit
@@ -19,3 +19,8 @@ async def request_domain(data: DomainRequestCreate, request: Request, db=Depends
     await hit(hub.redis, "domain_request:" + client_ip(request, settings), settings.rl_register_per_hour, 3600)
     row = await service.create_request(db, data)
     return {"id": row.id, "status": row.status}
+
+
+@router.get("", response_model=list[CampusOut])
+async def campuses(db=Depends(get_db)):
+    return await service.list_campuses(db)
