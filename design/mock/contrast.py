@@ -1,7 +1,7 @@
 """
-Checks the palette of the mock (or of the app's tokens.css):
-every text/background pair reaches WCAG AA (4.5:1), no forbidden university colour sneaks in,
-the site is never black and white, and no background drifts into warm peach, beige or cream.
+Checks the palette of the mock (or of the app's tokens.css) against the visual identity slide:
+every text/background pair reaches WCAG AA (4.5:1), the accent colours stay saturated (navy, teal, crimson, butter, royal),
+the site is never black and white, and no background drifts into warm peach, beige, orange or pink.
 This work made by Anfinogentov Nikita
 """
 import colorsys
@@ -9,22 +9,34 @@ import re
 import sys
 from pathlib import Path
 
-forbidden = ["AB0520", "0C234B", "001C48", "1E5288", "8B0015", "EF4056", "81D3EB", "378DBD", "007D84", "70B865", "A95C42"]
-tints = ["--tint-violet", "--tint-sky", "--tint-mint", "--tint-rose"]
+# There I list every token a theme must define, and the tokens text is allowed to sit on
+required = [
+    "--bg", "--surface", "--surface-2", "--border", "--fg", "--muted",
+    "--accent", "--on-accent", "--accent-text", "--teal", "--on-teal", "--butter", "--on-butter",
+    "--navy", "--on-navy", "--night", "--on-night", "--royal", "--periwinkle",
+    "--tint-teal", "--tint-sky", "--tint-steel", "--ink", "--intro-glow",
+]
+tints = ["--tint-teal", "--tint-sky", "--tint-steel"]
+grounds = ["--bg", "--surface", "--surface-2"] + tints
 
 # fg token, bg token: every pair I actually put text on
-pairs = [
-    ("--fg", "--bg"), ("--fg", "--surface"),
-    ("--muted", "--bg"), ("--muted", "--surface"),
-    ("--accent-text", "--bg"), ("--accent-text", "--surface"),
-    ("--on-accent", "--accent"),
+pairs = []
+for ground in grounds:
+    pairs += [("--fg", ground), ("--muted", ground), ("--accent-text", ground)]
+pairs += [
+    ("--on-accent", "--accent"), ("--on-teal", "--teal"), ("--on-butter", "--butter"),
+    ("--on-navy", "--navy"), ("--on-night", "--night"), ("--butter", "--night"), ("--butter", "--navy"),
 ]
-for tint in tints:
-    pairs += [("--fg", tint), ("--muted", tint), ("--accent-text", tint)]
 
-# backgrounds must carry real colour: chroma is (max - min) / 255 of the RGB channels
-colourful = {"--bg": 0.06, "--surface": 0.015, "--tint-violet": 0.06, "--tint-sky": 0.06, "--tint-mint": 0.06, "--tint-rose": 0.06,
-             "--ink": 0.2, "--intro-glow": 0.2}
+# the accents carry the identity: chroma is (max - min) / 255 of the RGB channels
+saturated = {
+    "--accent": 0.5, "--teal": 0.25, "--butter": 0.3, "--royal": 0.4, "--periwinkle": 0.3,
+    "--navy": 0.15, "--night": 0.12, "--ink": 0.15, "--intro-glow": 0.2,
+}
+# backgrounds may be a very quiet cream, but never a neutral grey
+not_grey = ["--bg", "--surface-2", "--border", "--muted", "--navy", "--night"] + tints
+# cream is allowed (chroma below 0.05); a clear peach, beige, orange or pink is not
+no_warm = ["--bg", "--surface", "--surface-2", "--border"] + tints
 
 
 def channels(hex_colour):
@@ -62,9 +74,10 @@ def main():
     # an optional path lets me check the app's tokens.css with the same rules
     css = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).with_name("styles.css")).read_text()
     failures = []
-    for colour in forbidden:
-        if colour.lower() in css.lower():
-            failures.append("forbidden colour #" + colour)
+
+    # pure black is never used, and shadows are tinted with the navy, not with black
+    if re.search(r"#000(000)?\b", css) or re.search(r"rgba?\(\s*0\s*[, ]\s*0\s*[, ]\s*0\b", css):
+        failures.append("pure black (#000 or rgba(0,0,0)) found, tint it with the navy instead")
 
     light = read_block(css, ":root {")
     dark = {**light, **read_block(css, ':root[data-theme="dark"]')}
@@ -76,28 +89,43 @@ def main():
     themes = {"light": light, "dark": dark}
 
     for name, tokens in themes.items():
+        missing = [token for token in required if token not in tokens]
+        if missing:
+            failures.append(f"{name} theme lacks: {', '.join(missing)}")
+            continue
         for fg, bg in pairs:
             value = ratio(tokens[fg], tokens[bg])
             line = f"{name:5} {fg:14} on {bg:13} {value:5.2f}"
             print(line)
             if value < 4.5:
                 failures.append(line)
-        for token, minimum in colourful.items():
+        for token, minimum in saturated.items():
             value = chroma(tokens[token])
             if value < minimum:
                 failures.append(f"{name} {token} {tokens[token]} is too grey: chroma {value:.3f} < {minimum}")
-            # hues from red through orange to yellow are the peach, beige and cream family
-            if value >= 0.015 and hue(tokens[token]) < 75:
-                failures.append(f"{name} {token} {tokens[token]} is warm (peach, beige or cream): hue {hue(tokens[token]):.0f}")
-        if chroma(tokens["--fg"]) < 0.04:
-            failures.append(f"{name} --fg {tokens['--fg']} is plain black or white")
+        for token in not_grey:
+            if chroma(tokens[token]) < 0.015:
+                failures.append(f"{name} {token} {tokens[token]} is a neutral grey")
+        for token in no_warm:
+            value = chroma(tokens[token])
+            angle = hue(tokens[token])
+            # hues from pink through red, orange and yellow are the peach, beige and cream family
+            if value >= 0.05 and (angle < 75 or angle > 335):
+                failures.append(f"{name} {token} {tokens[token]} is warm (peach, beige, orange or pink): hue {angle:.0f}")
+        # dark text must carry the navy, light text may be the quiet cream
+        if luminance(tokens["--fg"]) < 0.3 and chroma(tokens["--fg"]) < 0.04:
+            failures.append(f"{name} --fg {tokens['--fg']} is plain black or grey")
+        # white is fine for cards and text on fills, but the page itself is never pure white or pure black
+        for token in ["--bg", "--fg"]:
+            if tokens[token].upper() in ("FFFFFF", "000000"):
+                failures.append(f"{name} {token} is plain black or white")
 
     if failures:
         print("Ooops.. palette check failed:")
         for item in failures:
             print("  " + item)
         sys.exit(1)
-    print("all pairs pass, the palette is colourful and cool")
+    print("all pairs pass, the palette follows the slide and stays colourful")
 
 
 main()
