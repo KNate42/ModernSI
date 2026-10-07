@@ -3,7 +3,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
 
-type Mode = "datetime" | "date" | "relative";
+type Mode = "datetime" | "date" | "relative" | "day" | "month" | "clock";
 
 function format(iso: string, mode: Mode, timeZone?: string): string {
   const date = new Date(iso);
@@ -16,11 +16,14 @@ function format(iso: string, mode: Mode, timeZone?: string): string {
     }
     return "just now";
   }
-  const options: Intl.DateTimeFormatOptions =
-    mode === "date"
-      ? { day: "numeric", month: "short", year: "numeric", timeZone }
-      : { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone };
-  return new Intl.DateTimeFormat("en-GB", options).format(date) + (timeZone === "UTC" && mode === "datetime" ? " UTC" : "");
+  const options: Record<Exclude<Mode, "relative">, Intl.DateTimeFormatOptions> = {
+    date: { day: "numeric", month: "short", year: "numeric", timeZone },
+    day: { day: "numeric", timeZone },
+    month: { month: "short", timeZone },
+    clock: { hour: "2-digit", minute: "2-digit", timeZone },
+    datetime: { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone },
+  };
+  return new Intl.DateTimeFormat("en-GB", options[mode]).format(date) + (timeZone === "UTC" && mode === "datetime" ? " UTC" : "");
 }
 
 // false while rendering on the server and during hydration, true afterwards: no mismatch, no state in an effect

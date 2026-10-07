@@ -2,32 +2,38 @@
 // This work made by Anfinogentov Nikita
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
+import { PageHero } from "@/components/PageHero";
 
 export const metadata: Metadata = { title: "Forum" };
 
+const rules = [
+  "Be kind and assume good intent. People write from many countries and in their second or third language.",
+  "Use English in shared spaces, so every campus can follow.",
+  "Share your own words, photos and work. Do not post course materials, paid content or anything you do not have the rights to. Link to the source instead.",
+  "Do not publish other people's personal data: contacts, documents, grades.",
+  "No advertising, spam or fundraising for third parties.",
+  "Report what breaks these rules with the report link on the idea page. The admins review every report.",
+];
+
 export default function ForumPage() {
   return (
-    <div className="wrap">
-      <div className="page-head">
-        <p className="eyebrow">Forum</p>
-        <h1>An international student forum</h1>
-        <p>
-          A place where students from every campus talk about studying, life abroad and what to build next. Today the
-          conversation happens around ideas: each idea collects support, feedback from Student Government and a team.
-        </p>
-        <p><Link className="btn btn-primary" href="/ideas">Discuss an idea</Link></p>
+    <>
+      <PageHero
+        tone="steel" icon="forum" eyebrow="Forum" note="start with an idea"
+        title={<>Talk it <span className="marker">out</span></>}
+        lead="Students from every campus, one conversation about studying, life abroad and what to build next. Today it happens around ideas: each one collects votes, an answer from Student Government and a crew."
+      >
+        <Link className="btn btn-primary btn-large" href="/ideas">Discuss an idea<Icon name="arrow" /></Link>
+      </PageHero>
+      <div className="wrap page-body">
+        <section>
+          <div className="section-head"><div><p className="eyebrow">House rules</p><h2>Community rules</h2></div></div>
+          <ol className="rules">
+            {rules.map((rule) => <li key={rule}>{rule}</li>)}
+          </ol>
+        </section>
       </div>
-      <section>
-        <h2>Community rules</h2>
-        <ol className="rules">
-          <li>Be kind and assume good intent. People write from many countries and in their second or third language.</li>
-          <li>Use English in shared spaces so every campus can follow.</li>
-          <li>Share your own words, photos and work. Do not post course materials, paid content or anything you do not have the rights to; link to the source instead.</li>
-          <li>Do not publish other people&apos;s personal data: contacts, documents, grades.</li>
-          <li>No advertising, spam or fundraising for third parties.</li>
-          <li>Report what breaks these rules with the report link on the idea page; the admins review every report.</li>
-        </ol>
-      </section>
-    </div>
+    </>
   );
 }

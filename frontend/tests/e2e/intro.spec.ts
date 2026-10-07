@@ -7,9 +7,13 @@ test("plays once per session and ends by itself", async ({ page }) => {
   const overlay = page.locator(".intro");
   await expect(overlay).toBeVisible();
   await expect(overlay.locator("[data-intro-word]")).toHaveText("ModernSI");
-  await expect(page.getByRole("heading", { name: "One hub. Every campus." })).toBeAttached();
+  // the page is already there behind the overlay, but nobody can reach it until the intro is over
+  await expect(page.locator("main#main")).toBeAttached();
+  await expect(page.locator("main#main")).toHaveAttribute("inert", "");
+  await expect(overlay).toHaveAttribute("aria-modal", "true");
   await expect(overlay).toHaveCount(0, { timeout: 9_000 });
   expect(await page.evaluate(() => document.body.classList.contains("intro-lock"))).toBe(false);
+  await expect(page.locator("main#main")).not.toHaveAttribute("inert", "");
   await page.reload();
   await expect(page.locator(".intro")).toBeHidden();
 });

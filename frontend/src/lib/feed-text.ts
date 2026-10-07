@@ -24,7 +24,7 @@ export function feedSentence(item: FeedItem): FeedSentence | null {
     case "user_verified":
       return { before: `${data.display_name ?? "A student"} joined the network`, after: "" };
     case "idea_created":
-      return around(`${data.actor_name ?? "A student"} proposed `, idea, ideaTitle, "");
+      return around(`${data.actor_name ?? "A student"} pitched `, idea, ideaTitle, "");
     case "idea_reached_review":
       return around("", idea, data.idea_title ?? "An idea", " reached its support goal and went to review");
     case "idea_decided":
@@ -33,7 +33,7 @@ export function feedSentence(item: FeedItem): FeedSentence | null {
       return around("The team for ", idea, ideaTitle, " is complete");
     case "event_published": {
       const event = item.event_id && data.event_title ? { href: `/events/${item.event_id}`, text: data.event_title } : undefined;
-      return around("", event, data.event_title ?? "A new event", " is now on the Hub");
+      return around("", event, data.event_title ?? "A new event", " is on the calendar");
     }
     default:
       return null;

@@ -1,4 +1,4 @@
-// Propose or edit an idea. While an idea collects votes its category is fixed, so the select is locked.
+// Pitch or edit an idea. While an idea collects votes its category is fixed, so the select is locked.
 // This work made by Anfinogentov Nikita
 "use client";
 import { useRouter } from "next/navigation";
@@ -65,7 +65,7 @@ export function IdeaForm({ idea, campus }: { idea?: IdeaDetail; campus: string |
         value={body} onChange={(event) => setBody(event.target.value)} error={fieldError("body_md")}
       />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Saving…" : idea ? "Save changes" : "Publish idea"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : idea ? "Save changes" : "Pitch it"}</button>
       </div>
     </form>
   );

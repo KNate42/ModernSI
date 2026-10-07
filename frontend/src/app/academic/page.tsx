@@ -3,7 +3,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EventCard } from "@/components/EventCard";
+import { Icon, type IconName } from "@/components/Icon";
 import { IdeaList } from "@/components/IdeaList";
+import { PageHero } from "@/components/PageHero";
 import { Topics } from "@/components/Topics";
 import { qs } from "@/lib/query";
 import { apiGet, apiTry } from "@/lib/server-api";
@@ -11,12 +13,12 @@ import type { EventItem, IdeaCard, Page } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Academic" };
 
-const topics: [string, string][] = [
-  ["Schedule", "Class times across campuses, with changes in one place."],
-  ["Courses", "Course pages where students share what to expect."],
-  ["Professors", "Office hours and how to reach teaching staff."],
-  ["Resources", "Study guides students write and share themselves."],
-  ["Deadlines", "Submissions and exam dates you should not miss."],
+const topics: [string, string, IconName][] = [
+  ["Schedule", "Class times across campuses, with changes in one place.", "calendar"],
+  ["Courses", "Course pages where students share what to expect.", "book"],
+  ["Professors", "Office hours and how to reach teaching staff.", "users"],
+  ["Resources", "Study guides students write and share themselves.", "link"],
+  ["Deadlines", "Submissions and exam dates you should not miss.", "clock"],
 ];
 
 export default async function AcademicPage() {
@@ -26,28 +28,32 @@ export default async function AcademicPage() {
     apiTry<Page<EventItem>>(`/api/events${qs({ category: categories, limit: 4 })}`),
   ]);
   return (
-    <div className="wrap">
-      <div className="page-head">
-        <p className="eyebrow">Academic</p>
-        <h1>Study together across campuses</h1>
-        <p>The academic side of the network: how studying works on each campus, and what students build together beyond classes.</p>
-      </div>
-      <section>
-        <Topics title="What this section covers" intro="These parts open one by one. Academic ideas and events below already work." topics={topics} />
-      </section>
-      <section>
-        <div className="section-head">
-          <div><p className="eyebrow">Working now</p><h2>Academic and research ideas</h2></div>
-          <Link className="btn btn-primary" href="/ideas/new">Propose an idea</Link>
-        </div>
-        <IdeaList ideas={ideas.items} empty={<>No academic ideas yet. <Link href="/ideas/new">Propose the first one</Link>.</>} />
-      </section>
-      {events && events.items.length > 0 && (
+    <>
+      <PageHero
+        tone="sky" icon="academic" eyebrow="Academic" note="study with people"
+        title={<>Study together, <span className="marker">across campuses</span></>}
+        lead="When is class, where is the room, what is due on Friday. Studying is easier with people who have done it before, and with a few ideas of your own."
+      >
+        <Link className="btn btn-primary btn-large" href="/ideas/new">Pitch an academic idea<Icon name="arrow" /></Link>
+      </PageHero>
+      <div className="wrap page-body">
         <section>
-          <div className="section-head"><div><h2>Academic events</h2></div></div>
-          <div className="events">{events.items.map((event) => <EventCard key={event.id} event={event} />)}</div>
+          <Topics title="What this section covers" intro="These parts open one by one. Academic ideas and events below already work." topics={topics} />
         </section>
-      )}
-    </div>
+        <section>
+          <div className="section-head">
+            <div><p className="eyebrow">Working now</p><h2>Academic and research ideas</h2></div>
+            <Link className="btn" href="/ideas?category=academic">All academic ideas</Link>
+          </div>
+          <IdeaList ideas={ideas.items} empty="No academic ideas yet." emptyAction={{ href: "/ideas/new", label: "Pitch the first one" }} />
+        </section>
+        {events && events.items.length > 0 && (
+          <section>
+            <div className="section-head"><div><h2>Academic events</h2></div></div>
+            <div className="event-grid">{events.items.map((event) => <EventCard key={event.id} event={event} />)}</div>
+          </section>
+        )}
+      </div>
+    </>
   );
 }

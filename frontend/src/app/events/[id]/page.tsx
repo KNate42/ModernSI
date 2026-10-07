@@ -4,7 +4,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { placeText } from "@/components/EventCard";
+import { Icon } from "@/components/Icon";
 import { LocalTime } from "@/components/LocalTime";
+import { PageHero } from "@/components/PageHero";
 import { RsvpButton } from "@/components/events/RsvpButton";
 import { isUuid, qs } from "@/lib/query";
 import { apiFind, apiTry, getMe } from "@/lib/server-api";
@@ -25,45 +27,62 @@ export default async function EventPage({ params }: Props) {
   if (!event) notFound();
 
   return (
-    <div className="wrap detail">
-      <div className="page-head">
-        <p className="breadcrumbs"><Link href="/events">Events</Link> / {event.is_past ? "Past" : "Upcoming"}</p>
-        <p className="event-when"><LocalTime iso={event.starts_at} /> – <LocalTime iso={event.ends_at} /></p>
-        <h1>{event.title}</h1>
-        <p>{placeText(event)}</p>
+    <>
+      <PageHero
+        tone="teal"
+        crumbs={<p className="breadcrumbs"><Link href="/events">Events</Link> / {event.is_past ? "Past" : "Upcoming"}</p>}
+        art={
+          <span className="date-leaf">
+            <LocalTime iso={event.starts_at} mode="month" />
+            <LocalTime iso={event.starts_at} mode="day" />
+          </span>
+        }
+        title={event.title}
+        lead={<span className="event-hero-lines"><span className="event-when"><LocalTime iso={event.starts_at} /> – <LocalTime iso={event.ends_at} /></span><span className="event-hero-place"><Icon name="pin" />{placeText(event)}</span></span>}
+      />
+      <div className="wrap detail">
+        <div className="grid-2">
+          <aside className="card aside stack ticket-aside">
+            {event.is_past ? (
+              <>
+                <h2>It happened</h2>
+                <p>This event has ended. {event.going_count} {event.going_count === 1 ? "person was" : "people were"} going.</p>
+              </>
+            ) : me?.status === "active" ? (
+              <>
+                <h2>Your spot</h2>
+                <RsvpButton eventId={event.id} going={event.i_am_going} count={event.going_count} />
+              </>
+            ) : (
+              <>
+                <h2>Your spot</h2>
+                <p className="count muted"><b>{event.going_count} going</b></p>
+                {me ? (
+                  <Link className="btn btn-primary" href="/verify">Confirm your e-mail to join</Link>
+                ) : (
+                  <Link className="btn btn-primary" href={`/login${qs({ next: `/events/${event.id}` })}`}>Log in to join</Link>
+                )}
+              </>
+            )}
+          </aside>
+          <article className="paper">
+            {event.description_html ? (
+              <div className="prose" dangerouslySetInnerHTML={{ __html: event.description_html }} />
+            ) : (
+              <p className="muted">The organisers have not added details yet.</p>
+            )}
+            {event.online_url && (
+              <p className="paper-action">
+                <a className="btn btn-teal" href={event.online_url} target="_blank" rel="nofollow ugc noopener noreferrer"><Icon name="link" />Join online</a>
+              </p>
+            )}
+            {event.idea_id && event.idea_title && (
+              <p className="byline">Born from the student idea <Link href={`/ideas/${event.idea_id}`}>{event.idea_title}</Link>.</p>
+            )}
+            <p className="byline">Published by <Link href={`/profile/${event.created_by.id}`}>{event.created_by.display_name}</Link>.</p>
+          </article>
+        </div>
       </div>
-      <div className="grid-2">
-        <article>
-          {event.description_html ? (
-            <div className="prose" dangerouslySetInnerHTML={{ __html: event.description_html }} />
-          ) : (
-            <p className="muted">The organisers have not added a description.</p>
-          )}
-          {event.online_url && (
-            <p><a href={event.online_url} target="_blank" rel="nofollow ugc noopener noreferrer">Join online</a></p>
-          )}
-          {event.idea_id && event.idea_title && (
-            <p className="byline">Born from the student idea <Link href={`/ideas/${event.idea_id}`}>{event.idea_title}</Link>.</p>
-          )}
-          <p className="byline">Published by <Link href={`/profile/${event.created_by.id}`}>{event.created_by.display_name}</Link>.</p>
-        </article>
-        <aside className="card aside stack">
-          {event.is_past ? (
-            <p>This event has ended. {event.going_count} {event.going_count === 1 ? "person was" : "people were"} going.</p>
-          ) : me?.status === "active" ? (
-            <RsvpButton eventId={event.id} going={event.i_am_going} count={event.going_count} />
-          ) : (
-            <>
-              <p className="count muted"><b>{event.going_count} going</b></p>
-              {me ? (
-                <Link className="btn btn-primary" href="/verify">Confirm your e-mail to join</Link>
-              ) : (
-                <Link className="btn btn-primary" href={`/login${qs({ next: `/events/${event.id}` })}`}>Log in to join</Link>
-              )}
-            </>
-          )}
-        </aside>
-      </div>
-    </div>
+    </>
   );
 }

@@ -65,7 +65,7 @@ export function EventForm({ idea, campus }: { idea?: { id: string; title: string
         value={description} onChange={(event) => setDescription(event.target.value)} error={fieldError("description_md")}
       />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Publishing…" : "Publish event"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Publishing…" : "Publish event"}</button>
       </div>
     </form>
   );

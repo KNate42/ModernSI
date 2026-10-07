@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { VerifyForm } from "@/components/auth/VerifyForm";
+import { FormShell } from "@/components/forms/FormShell";
 import { getMe } from "@/lib/server-api";
 
 export const metadata: Metadata = { title: "Confirm your e-mail" };
@@ -12,11 +13,12 @@ export default async function VerifyPage() {
   if (!me) redirect("/login?next=/verify");
   if (me.status !== "pending") redirect("/personal");
   return (
-    <div className="wrap auth">
-      <p className="eyebrow">One more step</p>
-      <h1>Confirm your e-mail</h1>
-      <p className="lead-sm">We sent a 6-digit code to {me.email}. It works for 15 minutes.</p>
+    <FormShell
+      eyebrow="One more step" icon="mail"
+      title={<>Check your <span className="marker">inbox</span></>}
+      lead={<>We sent a 6-digit code to <span className="break-anywhere">{me.email}</span>. It works for 15 minutes.</>}
+    >
       <VerifyForm email={me.email} />
-    </div>
+    </FormShell>
   );
 }

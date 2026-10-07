@@ -36,7 +36,7 @@ export function DecisionForm({ ideaId }: { ideaId: string }) {
         label="Note for the author" multiline rows={4} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)}
         hint="The author gets it by e-mail." error={needNote ? "Write a note so the author knows what to change." : undefined}
       />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      <div className="button-row">
         <button className="btn btn-primary" type="button" disabled={pending} onClick={() => decide("approve")}>Approve</button>
         <button className="btn" type="button" disabled={pending} onClick={() => decide("needs_changes")}>Ask for changes</button>
         <button className="btn" type="button" disabled={pending} onClick={() => decide("reject")}>Reject</button>

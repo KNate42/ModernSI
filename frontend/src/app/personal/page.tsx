@@ -2,50 +2,53 @@
 // This work made by Anfinogentov Nikita
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EmptyState } from "@/components/EmptyState";
 import { EventCard } from "@/components/EventCard";
 import { FeedList } from "@/components/FeedList";
+import { Icon, type IconName } from "@/components/Icon";
 import { IdeaList } from "@/components/IdeaList";
+import { PageHero } from "@/components/PageHero";
 import { Topics } from "@/components/Topics";
 import { apiTry, getMe } from "@/lib/server-api";
 import type { EventItem, FeedItem, IdeaCard, Page } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Personal" };
 
-const topics: [string, string][] = [
-  ["Notifications", "Updates about your ideas, teams and events."],
-  ["Activity history", "Everything you did on the network, in order."],
-  ["Achievements", "Milestones such as your first idea that became an event."],
-  ["Digital portfolio", "Your projects and teams, ready to share."],
+const topics: [string, string, IconName][] = [
+  ["Notifications", "Updates about your ideas, teams and events.", "mail"],
+  ["Activity history", "Everything you did on the network, in order.", "clock"],
+  ["Achievements", "Milestones such as your first idea that became an event.", "star"],
+  ["Digital portfolio", "Your projects and teams, ready to share.", "camera"],
 ];
 
 export default async function PersonalPage() {
   const me = await getMe();
   if (!me) {
     return (
-      <div className="wrap">
-        <div className="page-head">
-          <p className="eyebrow">Personal</p>
-          <h1>Your corner of the network</h1>
-          <p>Your ideas, the ideas you support, your teams and your events, in one place.</p>
-          <p style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Link className="btn btn-primary" href="/join">Join</Link>
-            <Link className="btn" href="/login?next=/personal">Log in</Link>
-          </p>
+      <>
+        <PageHero
+          tone="paper" icon="personal" eyebrow="Personal" note="your stuff, one place"
+          title={<>Your corner of the <span className="marker">network</span></>}
+          lead="Your ideas, the ideas you back, your teams and your events. All in one place, and only yours."
+        >
+          <Link className="btn btn-primary btn-large" href="/join">Join<Icon name="arrow" /></Link>
+          <Link className="btn" href="/login?next=/personal">Log in</Link>
+        </PageHero>
+        <div className="wrap page-body">
+          <section><Topics title="What this section covers" topics={topics} /></section>
         </div>
-        <section><Topics title="What this section covers" topics={topics} /></section>
-      </div>
+      </>
     );
   }
   if (me.status === "pending") {
     return (
-      <div className="wrap">
-        <div className="page-head">
-          <p className="eyebrow">Personal</p>
-          <h1>Hi, {me.display_name}</h1>
-          <p>Confirm your e-mail to propose ideas, support them and join teams.</p>
-          <p><Link className="btn btn-primary" href="/verify">Confirm your e-mail</Link></p>
-        </div>
-      </div>
+      <PageHero
+        tone="paper" icon="mail" eyebrow="Personal"
+        title={<>Hi, <span className="marker">{me.display_name}</span></>}
+        lead="Confirm your e-mail to pitch ideas, back them and join teams."
+      >
+        <Link className="btn btn-primary btn-large" href="/verify">Confirm your e-mail<Icon name="arrow" /></Link>
+      </PageHero>
     );
   }
 
@@ -57,47 +60,44 @@ export default async function PersonalPage() {
     apiTry<Page<FeedItem>>("/api/feed?mine=true&limit=12"),
   ]);
   return (
-    <div className="wrap">
-      <div className="page-head section-head">
-        <div>
-          <p className="eyebrow">Personal</p>
-          <h1>Hi, {me.display_name}</h1>
-          <p>{me.campus_label ? `${me.campus_label} · ` : ""}Your ideas, support, teams and events.</p>
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <Link className="btn" href={`/profile/${me.id}`}>My profile</Link>
-          <Link className="btn" href="/settings">Settings</Link>
-        </div>
-      </div>
-      <section>
-        <div className="section-head">
-          <div><h2>My ideas</h2></div>
-          <Link className="btn btn-primary" href="/ideas/new">Propose an idea</Link>
-        </div>
-        <IdeaList ideas={authored?.items ?? []} empty={<>You have not proposed anything yet. <Link href="/ideas/new">Propose an idea</Link>.</>} />
-      </section>
-      <section>
-        <div className="section-head"><div><h2>Ideas I support</h2></div></div>
-        <IdeaList ideas={voted?.items ?? []} empty={<>You do not support any ideas yet. <Link href="/ideas?sort=closest">See ideas close to review</Link>.</>} />
-      </section>
-      <section>
-        <div className="section-head"><div><h2>My teams</h2></div></div>
-        <IdeaList ideas={teams?.items ?? []} empty={<>You are not in a team yet. Approved ideas look for people on the <Link href="/ideas">ideas page</Link>.</>} />
-      </section>
-      <section>
-        <div className="section-head"><div><h2>Events I&apos;m going to</h2></div></div>
-        {going && going.items.length > 0 ? (
-          <div className="events">{going.items.map((event) => <EventCard key={event.id} event={event} />)}</div>
-        ) : (
-          <p className="empty">No events yet. <Link href="/events">See what is coming up</Link>.</p>
-        )}
-      </section>
-      {activity && activity.items.length > 0 && (
+    <>
+      <PageHero
+        tone="paper" icon="personal" eyebrow={me.campus_label ?? "Personal"}
+        title={<>Hi, <span className="marker">{me.display_name}</span></>}
+        lead="Your ideas, the ones you back, your teams and your events."
+      >
+        <Link className="btn btn-primary btn-large" href="/ideas/new">Pitch an idea<Icon name="arrow" /></Link>
+        <Link className="btn" href={`/profile/${me.id}`}>My profile</Link>
+        <Link className="btn" href="/settings">Settings</Link>
+      </PageHero>
+      <div className="wrap page-body">
         <section>
-          <div className="section-head"><div><h2>My activity</h2></div></div>
-          <FeedList items={activity.items} />
+          <div className="section-head"><div><h2>My ideas</h2></div></div>
+          <IdeaList ideas={authored?.items ?? []} empty="You have not pitched anything yet." emptyAction={{ href: "/ideas/new", label: "Pitch an idea" }} />
         </section>
-      )}
-    </div>
+        <section>
+          <div className="section-head"><div><h2>Ideas I back</h2></div></div>
+          <IdeaList ideas={voted?.items ?? []} empty="You do not support any ideas yet." emptyAction={{ href: "/ideas?sort=closest", label: "See ideas close to review" }} />
+        </section>
+        <section>
+          <div className="section-head"><div><h2>My teams</h2></div></div>
+          <IdeaList ideas={teams?.items ?? []} empty="You are not in a team yet. Approved ideas look for people." emptyAction={{ href: "/ideas", label: "Browse ideas" }} />
+        </section>
+        <section>
+          <div className="section-head"><div><h2>Events I&apos;m going to</h2></div></div>
+          {going && going.items.length > 0 ? (
+            <div className="event-grid">{going.items.map((event) => <EventCard key={event.id} event={event} />)}</div>
+          ) : (
+            <EmptyState icon="events" action={{ href: "/events", label: "See what is coming up" }}>No events yet.</EmptyState>
+          )}
+        </section>
+        {activity && activity.items.length > 0 && (
+          <section>
+            <div className="section-head"><div><h2>My activity</h2></div></div>
+            <FeedList items={activity.items} />
+          </section>
+        )}
+      </div>
+    </>
   );
 }

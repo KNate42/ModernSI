@@ -1,4 +1,4 @@
-// "I'm going" / "Cancel my spot" with the live count.
+// "I'm in" / "Cancel my spot" with the live count.
 // This work made by Anfinogentov Nikita
 "use client";
 import { useState } from "react";
@@ -22,7 +22,7 @@ export function RsvpButton({ eventId, going, count }: { eventId: string; going: 
     <div className="stack">
       <p className="count muted"><b>{state.count} going</b></p>
       <button className={state.going ? "btn" : "btn btn-primary"} type="button" onClick={toggle} disabled={pending} aria-busy={pending}>
-        {state.going ? "Cancel my spot" : "I'm going"}
+        {state.going ? "Cancel my spot" : "I'm in"}
       </button>
       {error && <p className="field-error" role="alert">{error.message}</p>}
     </div>

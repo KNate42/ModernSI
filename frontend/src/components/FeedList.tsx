@@ -1,4 +1,4 @@
-// Activity feed list: one sentence per record, time in the visitor's timezone, campus or "whole network".
+// Activity feed list: one sentence per record on a sticky note, with the campus or "whole network" and the time in the visitor's timezone.
 // This work made by Anfinogentov Nikita
 import Link from "next/link";
 import { feedSentence } from "@/lib/feed-text";
@@ -11,16 +11,18 @@ export function FeedList({ items }: { items: FeedItem[] }) {
     return sentence ? [{ item, sentence }] : [];
   });
   return (
-    <ul className="feed">
+    <ul className="activity">
       {rows.map(({ item, sentence }) => (
-        <li key={item.id}>
-          <span className="dot" aria-hidden="true" />
-          <span>
+        <li key={item.id} className="activity-item">
+          <div className="activity-meta">
+            <span className="activity-campus">{item.campus_label ?? "Whole network"}</span>
+            <span className="activity-time"><LocalTime iso={item.at} mode="relative" /></span>
+          </div>
+          <p>
             {sentence.before}
             {sentence.link && <Link href={sentence.link.href}>{sentence.link.text}</Link>}
             {sentence.after}
-            <small><LocalTime iso={item.at} mode="relative" /> · {item.campus_label ?? "whole network"}</small>
-          </span>
+          </p>
         </li>
       ))}
     </ul>

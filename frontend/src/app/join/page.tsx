@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { JoinForm } from "@/components/auth/JoinForm";
+import { FormShell } from "@/components/forms/FormShell";
 import { getMe } from "@/lib/server-api";
 
 export const metadata: Metadata = { title: "Join" };
@@ -12,12 +13,13 @@ export default async function JoinPage() {
   const me = await getMe();
   if (me) redirect(me.status === "pending" ? "/verify" : "/personal");
   return (
-    <div className="wrap auth">
-      <p className="eyebrow">Join the network</p>
-      <h1>Create your account</h1>
-      <p className="lead-sm">Sign up with your university e-mail. Anyone can read ModernSI; members propose ideas, vote and join teams.</p>
+    <FormShell
+      eyebrow="Join the network" tone="teal" icon="community" note="free, takes 30 seconds"
+      title={<>Join with your <span className="marker">uni e-mail</span></>}
+      lead="Anyone can read ModernSI. Members pitch ideas, back the good ones and join teams. Your e-mail domain tells us which campus you belong to."
+      below={<>Already a member? <Link href="/login">Log in</Link></>}
+    >
       <JoinForm />
-      <p className="below">Already a member? <Link href="/login">Log in</Link></p>
-    </div>
+    </FormShell>
   );
 }

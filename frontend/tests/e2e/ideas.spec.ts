@@ -1,4 +1,4 @@
-// The idea path in the browser: propose, collect support, review by Student Government, gather a team.
+// The idea path in the browser: pitch, collect support, review by Student Government, gather a team.
 // Thresholds are lowered for e2e (2 votes, team of 2) in start-backend.sh.
 // This work made by Anfinogentov Nikita
 import { expect, test } from "@playwright/test";
@@ -15,7 +15,7 @@ test("an idea goes from proposal to review to a full team", async ({ page, brows
   await page.getByLabel("Category").selectOption("event");
   await page.getByLabel("Whole network").check();
   await page.getByLabel("Details").fill("We need **tables** and a room.");
-  await page.getByRole("button", { name: "Publish idea" }).click();
+  await page.getByRole("button", { name: "Pitch it" }).click();
   await expect(page).toHaveURL(/\/ideas\/[0-9a-f-]{36}$/);
   const ideaUrl = page.url();
   const ideaId = ideaUrl.split("/").pop()!;
@@ -23,6 +23,10 @@ test("an idea goes from proposal to review to a full team", async ({ page, brows
   await expect(page.locator(".prose strong")).toHaveText("tables");
   await expect(page.getByText("0 of 2")).toBeVisible();
   await expect(page.getByRole("button", { name: "Support this idea" })).toHaveCount(0);
+  // the path from pitch to calendar marks the stage the idea is in
+  const path = page.getByRole("list", { name: "Where this idea is on its way to an event" });
+  await expect(path.locator(".idea-path-label")).toHaveText(["Pitched", "Support", "Review", "Team", "On the calendar"]);
+  await expect(path.locator('[aria-current="step"] .idea-path-label')).toHaveText("Support");
 
   // a second student supports it in their own browser; a double click must count once
   const voterContext = await browser.newContext();
@@ -40,6 +44,7 @@ test("an idea goes from proposal to review to a full team", async ({ page, brows
   await third.context.dispose();
   await page.reload();
   await expect(page.getByText("Student Government is reviewing this idea.")).toBeVisible();
+  await expect(path.locator('[aria-current="step"] .idea-path-label')).toHaveText("Review");
 
   // Student Government approves in its own browser
   const govContext = await browser.newContext();
@@ -51,6 +56,7 @@ test("an idea goes from proposal to review to a full team", async ({ page, brows
   await govPage.getByLabel("Note for the author").fill("Great idea, go ahead.");
   await govPage.getByRole("button", { name: "Approve" }).click();
   await expect(govPage.locator(".badge-accent")).toHaveText("Gathering a team");
+  await expect(govPage.locator('.idea-path [aria-current="step"] .idea-path-label')).toHaveText("Team");
 
   // the voter joins the team, again with a double click
   await voterPage.reload();
@@ -59,7 +65,7 @@ test("an idea goes from proposal to review to a full team", async ({ page, brows
   await expect(voterPage.getByText("2 of 2 people in the team")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("link", { name: "Put it on the Hub" })).toHaveAttribute("href", `/events/new?idea=${ideaId}`);
+  await expect(page.getByRole("link", { name: "Put it on the calendar" })).toHaveAttribute("href", `/events/new?idea=${ideaId}`);
   await expect(page.getByRole("list", { name: "Team" }).getByRole("link", { name: "Vera Voter" })).toBeVisible();
   await voterContext.close();
   await govContext.close();
@@ -93,6 +99,8 @@ test("asking for changes, editing and sending back to review", async ({ page, br
   await page.goto(`/ideas/${ideaId}`);
   await expect(page.getByText("Say which weeks exactly.")).toBeVisible();
   await page.getByRole("link", { name: "Edit idea" }).click();
+  await expect(page.getByText("Student Government says")).toBeVisible();
+  await expect(page.getByRole("figure").getByText("Say which weeks exactly.")).toBeVisible();
   await page.getByLabel("Short summary").fill("Keep the library open until midnight in the two weeks before exams.");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(`${BASE}/ideas/${ideaId}`);
@@ -108,6 +116,10 @@ test("guests read ideas and are asked to log in to support", async ({ page }) =>
   const ideaId = (await created.json()).id;
   await author.context.dispose();
   await page.goto("/ideas?sort=new");
+  // every card wears one of the three cool tints, and the cards are second-level headings under the page title
+  await expect(page.locator(".idea-card").first()).toHaveClass(/tint-(teal|sky|steel)/);
+  await expect(page.locator("main h1")).toHaveText("Ideas worth backing");
+  await expect(page.locator(".idea-card h2").first()).toBeVisible();
   await page.getByRole("link", { name: /Board games and tea/ }).first().click();
   await expect(page).toHaveURL(`${BASE}/ideas/${ideaId}`);
   await page.getByRole("link", { name: "Log in to support it" }).click();
@@ -119,4 +131,32 @@ test("broken idea links and page cursors do not crash", async ({ page }) => {
   expect((await page.goto("/ideas/00000000-0000-4000-8000-000000000000"))?.status()).toBe(404);
   await page.goto("/ideas?cursor=abc&sort=trending");
   await expect(page).toHaveURL(`${BASE}/ideas?sort=trending`);
+});
+
+test("long titles, Cyrillic text and unbroken words stay inside the page on a phone", async ({ page }) => {
+  const author = await apiUser("Long Content");
+  const unbroken = "Supercalifragilisticexpialidocious-Pneumonoultramicroscopicsilicovolcanoconiosis-hackathon";
+  const cyrillic = "Совместный фестиваль студенческих инициатив кампусов Алматы, Тбилиси и Еревана";
+  const ids: string[] = [];
+  for (const title of [unbroken, cyrillic]) {
+    const created = await author.context.post("/api/ideas", {
+      data: {
+        title, category: "club", scope: "network", body_md: "Pneumonoultramicroscopicsilicovolcanoconiosispneumonoultramicroscopicsilicovolcanoconiosis",
+        summary: "Details: https://example.org/a/very/long/path/that/never/breaks/because/it/has/no/spaces/at/all/and/keeps/going/and/going",
+      },
+    });
+    expect(created.status()).toBe(201);
+    ids.push((await created.json()).id);
+  }
+  await author.context.dispose();
+  await page.setViewportSize({ width: 360, height: 800 });
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  await page.goto("/ideas?sort=new");
+  await expect(page.getByRole("link", { name: new RegExp(cyrillic.slice(0, 20)) }).first()).toBeVisible();
+  expect(await overflow(), "ideas list").toBeLessThanOrEqual(0);
+  for (const id of ids) {
+    await page.goto(`/ideas/${id}`);
+    await expect(page.locator("main h1")).toBeVisible();
+    expect(await overflow(), `idea ${id}`).toBeLessThanOrEqual(0);
+  }
 });

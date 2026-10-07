@@ -1,4 +1,4 @@
-// Events: an approved idea with a full team goes on the Hub; the typed time comes back unchanged; RSVP.
+// Events: an approved idea with a full team goes on the calendar; the typed time comes back unchanged; RSVP.
 // The browser runs in Tbilisi time (UTC+4, no daylight saving) so the timezone conversion is visible.
 // This work made by Anfinogentov Nikita
 import { expect, test } from "@playwright/test";
@@ -24,12 +24,12 @@ async function ideaWithFullTeam(title: string) {
   return { ideaId, authorEmail: author.email };
 }
 
-test("the author puts the idea on the Hub and the time comes back as typed", async ({ page }) => {
+test("the author puts the idea on the calendar and the time comes back as typed", async ({ page }) => {
   const title = `Dinner of nations ${Date.now() % 100000}`;
   const { ideaId, authorEmail } = await ideaWithFullTeam(title);
   await loginInBrowser(page, authorEmail, PASSWORD);
   await page.goto(`/ideas/${ideaId}`);
-  await page.getByRole("link", { name: "Put it on the Hub" }).click();
+  await page.getByRole("link", { name: "Put it on the calendar" }).click();
   await expect(page.getByLabel("Title")).toHaveValue(title);
 
   const day = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
@@ -47,12 +47,13 @@ test("the author puts the idea on the Hub and the time comes back as typed", asy
   const stored = await (await page.request.get(`/api/events/${eventId}`)).json();
   expect(new Date(stored.starts_at).toISOString()).toBe(`${day}T14:30:00.000Z`);
 
-  await page.getByRole("button", { name: "I'm going" }).dblclick();
+  await page.getByRole("button", { name: "I'm in" }).dblclick();
   await expect(page.getByRole("button", { name: "Cancel my spot" })).toBeVisible();
   await expect(page.getByText("1 going")).toBeVisible();
 
   await page.goto(`/ideas/${ideaId}`);
-  await expect(page.locator(".badge-accent")).toHaveText("On the Hub");
+  await expect(page.locator(".badge-accent")).toHaveText("On the calendar");
+  await expect(page.locator('.idea-path [aria-current="step"] .idea-path-label')).toHaveText("On the calendar");
   await page.getByRole("link", { name: title }).click();
   await expect(page).toHaveURL(`${BASE}/events/${eventId}`);
 
@@ -61,7 +62,7 @@ test("the author puts the idea on the Hub and the time comes back as typed", asy
 
   // the whole path ends on the homepage
   await page.goto("/");
-  await expect(page.locator("#events")).toContainText(title);
+  await expect(page.getByRole("main")).toContainText(title);
 });
 
 test("an event that ends before it starts is refused with the API's message", async ({ page }) => {
@@ -88,4 +89,32 @@ test("only curators open the free event form; guests are sent to log in", async 
   await loginInBrowser(studentPage, student.email, PASSWORD);
   expect((await studentPage.goto("/events/new"))?.status()).toBe(404);
   await context.close();
+});
+
+test("an event ticket shows its day, and long titles and places stay inside a phone screen", async ({ page }) => {
+  const curator = await apiLogin(STAFF.curator, STAFF.password);
+  const startsAt = new Date(Date.now() + 4 * 86_400_000);
+  startsAt.setUTCHours(12, 0, 0, 0);
+  const title = "Pneumonoultramicroscopicsilicovolcanoconiosis-appreciation-evening";
+  const created = await curator.post("/api/events", {
+    data: {
+      title, starts_at: startsAt.toISOString(), ends_at: new Date(startsAt.getTime() + 3_600_000).toISOString(), scope: "network",
+      location_text: "Room-with-an-extraordinarily-long-name-that-does-not-break-anywhere-204", description_md: "Pneumonoultramicroscopicsilicovolcanoconiosispneumonoultramicroscopicsilicovolcanoconiosis",
+    },
+  });
+  expect(created.status()).toBe(201);
+  const eventId = (await created.json()).id;
+  await curator.dispose();
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  await page.goto("/events");
+  // the leaf of the ticket carries the day of the month in the visitor's timezone (Tbilisi, UTC+4)
+  const ticket = page.getByRole("link", { name: new RegExp(title.slice(0, 30)) }).first();
+  await expect(ticket.locator(".event-leaf")).toHaveText(new RegExp(`${startsAt.toLocaleString("en-GB", { month: "short", timeZone: "Asia/Tbilisi" })}${startsAt.toLocaleString("en-GB", { day: "numeric", timeZone: "Asia/Tbilisi" })}`, "i"));
+  expect(await overflow(), "events list").toBeLessThanOrEqual(0);
+  await ticket.click();
+  await expect(page).toHaveURL(`${BASE}/events/${eventId}`);
+  await expect(page.locator("main h1")).toHaveText(title);
+  expect(await overflow(), "event page").toBeLessThanOrEqual(0);
 });

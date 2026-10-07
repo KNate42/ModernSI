@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { EventForm } from "@/components/events/EventForm";
+import { FormShell } from "@/components/forms/FormShell";
+import { Notice } from "@/components/forms/Notice";
 import { firstParam, isUuid, qs } from "@/lib/query";
 import { apiFind, getMe } from "@/lib/server-api";
 import type { IdeaDetail } from "@/lib/types";
@@ -23,12 +25,13 @@ export default async function NewEventPage({ searchParams }: Props) {
   if (ideaId === undefined) {
     if (!curator) notFound();
     return (
-      <div className="wrap auth">
-        <p className="eyebrow">On the Hub</p>
-        <h1>Publish an event</h1>
-        <p className="lead-sm">As a curator you can publish events that did not start as an idea.</p>
+      <FormShell
+        eyebrow="On the calendar" tone="teal" icon="events"
+        title={<>Publish an <span className="marker">event</span></>}
+        lead="As a curator you can publish events that did not start as an idea. Set the time, the place and say what to bring."
+      >
         <EventForm campus={me.campus_label} />
-      </div>
+      </FormShell>
     );
   }
 
@@ -37,22 +40,22 @@ export default async function NewEventPage({ searchParams }: Props) {
   if (!idea || !(idea.is_author || curator)) notFound();
   const ready = idea.status === "forming_team" && idea.team_size >= idea.team_min;
   return (
-    <div className="wrap auth">
-      <p className="breadcrumbs"><Link href={`/ideas/${idea.id}`}>{idea.title}</Link> / Put it on the Hub</p>
-      <h1>Put it on the Hub</h1>
+    <FormShell
+      eyebrow="Last step" tone="teal" icon="events"
+      crumbs={<p className="breadcrumbs"><Link href={`/ideas/${idea.id}`}>{idea.title}</Link> / Put it on the calendar</p>}
+      title={<>Put it on the <span className="marker">calendar</span></>}
+      lead={ready ? "Set the time and the place. The team gets an e-mail as soon as the event is published." : undefined}
+    >
       {ready ? (
-        <>
-          <p className="lead-sm">Set the time and the place. The team gets an e-mail as soon as the event is published.</p>
-          <EventForm idea={{ id: idea.id, title: idea.title }} campus={me.campus_label} />
-        </>
+        <EventForm idea={{ id: idea.id, title: idea.title }} campus={me.campus_label} />
       ) : (
-        <p className="notice">
+        <Notice kind="info">
           {idea.status === "forming_team"
             ? `The team needs at least ${idea.team_min} people first; now it has ${idea.team_size}.`
             : "This idea is not gathering a team, so it cannot become a new event."}{" "}
           <Link href={`/ideas/${idea.id}`}>Back to the idea</Link>
-        </p>
+        </Notice>
       )}
-    </div>
+    </FormShell>
   );
 }

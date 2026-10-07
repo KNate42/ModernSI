@@ -7,6 +7,7 @@ import { useState } from "react";
 import { api } from "@/lib/client-api";
 import { qs } from "@/lib/query";
 import { Field } from "../forms/Field";
+import { Notice } from "../forms/Notice";
 import { FormError } from "../forms/FormError";
 import { useSubmit } from "../forms/useSubmit";
 
@@ -29,10 +30,10 @@ export function JoinForm() {
   return (
     <form className="form" onSubmit={onSubmit}>
       {error?.code === "domain_not_allowed" ? (
-        <div className="notice notice-error" role="alert">
-          <p style={{ margin: "0 0 8px" }}>Your university is not on ModernSI yet.</p>
+        <Notice kind="error" role="alert">
+          <p>Your university is not on ModernSI yet.</p>
           <Link href={`/request-campus${qs({ email: email.trim() })}`}>Ask us to add it</Link>
-        </div>
+        </Notice>
       ) : (
         <FormError error={error} />
       )}
@@ -40,7 +41,7 @@ export function JoinForm() {
       <Field label="Your name" autoComplete="name" required minLength={2} maxLength={60} value={name} onChange={(event) => setName(event.target.value)} error={fieldError("display_name")} />
       <Field label="Password" type="password" autoComplete="new-password" required minLength={10} hint="At least 10 characters." value={password} onChange={(event) => setPassword(event.target.value)} error={fieldError("password")} />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Creating…" : "Create account"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Creating…" : "Create account"}</button>
       </div>
     </form>
   );

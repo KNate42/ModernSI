@@ -3,7 +3,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EmptyState } from "@/components/EmptyState";
+import { Notice } from "@/components/forms/Notice";
+import { Icon } from "@/components/Icon";
 import { LocalTime } from "@/components/LocalTime";
+import { PageHero } from "@/components/PageHero";
 import { roleLabels } from "@/lib/format";
 import { isUuid } from "@/lib/query";
 import { apiFind, apiTry, getMe } from "@/lib/server-api";
@@ -22,50 +26,72 @@ export default async function ProfilePage({ params }: Props) {
   if (!isUuid(id)) notFound();
   const [profile, me] = await Promise.all([apiFind<Profile>(`/api/profiles/${id}`), getMe()]);
   if (!profile) notFound();
+  const mine = me?.id === profile.id;
+  const blank = !profile.bio && profile.languages.length === 0 && profile.interests.length === 0 && profile.links.length === 0;
 
   return (
-    <div className="wrap detail">
-      <div className="page-head profile-head">
-        {profile.has_avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="avatar avatar-lg" src={`/api/profiles/${profile.id}/avatar`} alt="" />
-        ) : (
-          <span className="avatar avatar-lg" aria-hidden="true">{profile.display_name.slice(0, 1).toUpperCase()}</span>
+    <>
+      <PageHero
+        tone="steel"
+        art={
+          profile.has_avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="avatar avatar-xl" src={`/api/profiles/${profile.id}/avatar`} alt="" />
+          ) : (
+            <span className="avatar avatar-xl">{profile.display_name.slice(0, 1).toUpperCase()}</span>
+          )
+        }
+        crumbs={
+          <div className="badges">
+            <span className="badge">{profile.campus_label ?? "ModernSI"}</span>
+            {profile.role !== "student" && <span className="badge badge-accent">{roleLabels[profile.role]}</span>}
+          </div>
+        }
+        title={profile.display_name}
+        lead={<>Joined <LocalTime iso={profile.joined_at} mode="date" /></>}
+      >
+        {mine && <Link className="btn btn-small" href="/settings">Edit profile</Link>}
+      </PageHero>
+      <div className="wrap detail">
+        {!profile.extended && <Notice kind="info">Some profile details are unavailable right now. Try again in a few minutes.</Notice>}
+        {profile.extended && blank && (
+          mine ? (
+            <EmptyState icon="personal" action={{ href: "/settings", label: "Tell people about yourself" }}>Your profile is empty so far. One line about you is enough.</EmptyState>
+          ) : (
+            <EmptyState icon="personal">{profile.display_name} has not added anything here yet.</EmptyState>
+          )
         )}
-        <div>
-          <h1>{profile.display_name}</h1>
-          <p>
-            {profile.campus_label ?? "ModernSI"}
-            {profile.role !== "student" && <> · <span className="badge badge-accent">{roleLabels[profile.role]}</span></>}
-            {" · "}joined <LocalTime iso={profile.joined_at} mode="date" />
-          </p>
-          {me?.id === profile.id && <p><Link className="btn btn-small" href="/settings">Edit profile</Link></p>}
+        <div className="profile-grid">
+          {profile.bio && (
+            <section className="paper profile-bio">
+              <h2>About</h2>
+              <p>{profile.bio}</p>
+            </section>
+          )}
+          {profile.languages.length > 0 && (
+            <section className="paper">
+              <h2>Languages</h2>
+              <ul className="tags">{profile.languages.map((item) => <li key={item}>{item}</li>)}</ul>
+            </section>
+          )}
+          {profile.interests.length > 0 && (
+            <section className="paper">
+              <h2>Interests</h2>
+              <ul className="tags">{profile.interests.map((item) => <li key={item}>{item}</li>)}</ul>
+            </section>
+          )}
+          {profile.links.length > 0 && (
+            <section className="paper">
+              <h2>Links</h2>
+              <ul className="link-list">
+                {profile.links.map((link) => (
+                  <li key={link}><Icon name="link" /><a href={link} target="_blank" rel="nofollow ugc noopener noreferrer">{link.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a></li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
-      {!profile.extended && <p className="notice">Some profile details are unavailable right now. Try again in a few minutes.</p>}
-      {profile.bio && <p className="prose" style={{ maxWidth: "65ch", fontSize: 18 }}>{profile.bio}</p>}
-      {profile.languages.length > 0 && (
-        <section className="settings-block">
-          <h2>Languages</h2>
-          <ul className="tags">{profile.languages.map((item) => <li key={item}>{item}</li>)}</ul>
-        </section>
-      )}
-      {profile.interests.length > 0 && (
-        <section className="settings-block">
-          <h2>Interests</h2>
-          <ul className="tags">{profile.interests.map((item) => <li key={item}>{item}</li>)}</ul>
-        </section>
-      )}
-      {profile.links.length > 0 && (
-        <section className="settings-block">
-          <h2>Links</h2>
-          <ul className="team-list">
-            {profile.links.map((link) => (
-              <li key={link}><a href={link} target="_blank" rel="nofollow ugc noopener noreferrer">{link.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a></li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </div>
+    </>
   );
 }

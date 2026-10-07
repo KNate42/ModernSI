@@ -1,5 +1,5 @@
-// Pre-delivery audit of the site sources: brand ban, placeholder words, forbidden colours and fonts,
-// empty links, and the intro engine being the exact file approved in the mock.
+// Pre-delivery audit of the site sources: brand ban, placeholder words, pure black, forbidden fonts, the old term Hub and the banned
+// voice words, empty links, and the intro engine being the exact file approved in the mock.
 // This work made by Anfinogentov Nikita
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
@@ -8,20 +8,18 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const scanned = ["src", "public"];
 const extensions = new Set([".ts", ".tsx", ".js", ".mjs", ".css", ".svg", ".json", ".md"]);
-const forbiddenHex = ["AB0520", "0C234B", "001C48", "1E5288", "8B0015", "EF4056", "81D3EB", "378DBD", "007D84", "70B865", "A95C42"];
-
-// the same colours written as rgb()/rgba()
-const forbiddenRgb = forbiddenHex.map((hex) => {
-  const [r, g, b] = [0, 2, 4].map((at) => parseInt(hex.slice(at, at + 2), 16));
-  return `rgba?\\(\\s*${r}\\s*,\\s*${g}\\s*,\\s*${b}\\b`;
-});
-
 const checks = [
   { name: "brand word", pattern: /arizona|wildcats?|bear\s*down|\buofa\b/i },
   { name: "placeholder word", pattern: /lorem|ipsum|coming soon|\bTBD\b|\bTODO\b|\bFIXME\b/i },
-  { name: "forbidden colour", pattern: new RegExp(`#(${forbiddenHex.join("|")})\\b`, "i") },
-  { name: "forbidden colour", pattern: new RegExp(forbiddenRgb.join("|"), "i") },
+  // The slide's colours are allowed now; pure black is not (tint shadows and text with the navy instead): #000, #000000 (also with alpha),
+  // rgb()/rgba() written with commas or spaces, and the keyword
+  { name: "pure black", pattern: /#0{3}(?:0{3})?(?:[0-9a-f]{1,2})?\b/i },
+  { name: "pure black", pattern: /rgba?\(\s*0\s*[, ]\s*0\s*[, ]\s*0\b/i },
+  { name: "pure black", pattern: /:\s*black\b|["']black["']/i },
   { name: "forbidden font", pattern: /proxima\s*nova|\bmilo\b/i },
+  // The voice of the interface (spec 2026-10-07, section 7): "Hub" is not a term any more, and these words are banned in the interface
+  { name: "old term Hub", pattern: /\bhub\b/i },
+  { name: "banned voice word", pattern: /ecosystem|seamless|empower|leverage|digital hub|solutions|\bplatforms?\b/i },
   { name: "empty link", pattern: /href=(["'])#?\1|href=\{\s*(["'])#?\2\s*\}/ },
 ];
 

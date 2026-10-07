@@ -24,10 +24,26 @@ test("a member's own ideas show up on Personal", async ({ page }) => {
   await expect(page.getByText("You do not support any ideas yet.")).toBeVisible();
 });
 
+test("a new member sees four honest empty states, each with a next step", async ({ page }) => {
+  await signUpInBrowser(page, uniqueEmail("fresh"), "Fran Fresh");
+  await page.goto("/personal");
+  const empty = page.locator(".empty");
+  await expect(empty).toHaveCount(4);
+  await expect(empty.nth(0)).toContainText("You have not pitched anything yet.");
+  await expect(empty.nth(1)).toContainText("You do not support any ideas yet.");
+  await expect(empty.nth(2)).toContainText("You are not in a team yet.");
+  await expect(empty.nth(3)).toContainText("No events yet.");
+  for (const box of await empty.all()) await expect(box.getByRole("link")).toHaveCount(1);
+  await expect(page.getByRole("main").locator(".btn-primary")).toHaveCount(1);
+});
+
 test("section pages list their parts as text, not links", async ({ page }) => {
   const parts = [["/academic", "Schedule"], ["/international", "Scholarships"], ["/community", "Speaking Club"], ["/personal", "Achievements"]];
   for (const [path, part] of parts) {
     await page.goto(path);
+    // a section opens with a hero band and one crimson call to action
+    await expect(page.locator(".page-hero h1")).toBeVisible();
+    await expect(page.locator(".page-hero .btn-primary")).toHaveCount(1);
     await expect(page.getByRole("main").getByText(part, { exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("link", { name: part, exact: true })).toHaveCount(0);
   }
@@ -63,7 +79,7 @@ test("a bad link is explained next to the field", async ({ page }) => {
 test("a guest's theme survives a reload without a flash", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/");
-  await page.getByRole("button", { name: "Switch colour theme" }).click();
+  await page.getByRole("switch", { name: "Dark theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   // record the theme at the end of HTML parsing, before any React code runs
   await page.addInitScript(() => {
@@ -73,14 +89,14 @@ test("a guest's theme survives a reload without a flash", async ({ page }) => {
   });
   await page.reload();
   expect(await page.evaluate(() => (window as unknown as { themeAtParse?: string }).themeAtParse)).toBe("light");
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(241, 239, 255)");
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe("rgb(240, 240, 234)");
 });
 
 test("a member's theme follows them to another browser", async ({ page, browser }) => {
   const email = uniqueEmail("theme");
   await signUpInBrowser(page, email, "Theo Theme");
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.getByRole("button", { name: "Switch colour theme" }).click();
+  await page.getByRole("switch", { name: "Dark theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect.poll(async () => (await (await page.request.get("/api/profiles/me")).json()).theme).toBe("light");
   const other = await browser.newContext({ colorScheme: "dark" });

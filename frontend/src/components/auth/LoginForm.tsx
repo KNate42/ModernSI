@@ -7,6 +7,7 @@ import { api } from "@/lib/client-api";
 import { safeNext } from "@/lib/query";
 import type { Me } from "@/lib/types";
 import { Field } from "../forms/Field";
+import { Notice } from "../forms/Notice";
 import { FormError } from "../forms/FormError";
 import { useSubmit } from "../forms/useSubmit";
 
@@ -27,12 +28,12 @@ export function LoginForm({ next, reset }: { next?: string; reset: boolean }) {
 
   return (
     <form className="form" onSubmit={onSubmit}>
-      {reset && !error && <div className="notice" role="status">Your password is changed. Log in with the new one.</div>}
+      {reset && !error && <Notice kind="ok" role="status">Your password is changed. Log in with the new one.</Notice>}
       <FormError error={error} />
       <Field label="E-mail" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} error={fieldError("email")} />
       <Field label="Password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} error={fieldError("password")} />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Logging in…" : "Log in"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Logging in…" : "Log in"}</button>
       </div>
     </form>
   );

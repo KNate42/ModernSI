@@ -3,17 +3,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ForgotForm } from "@/components/auth/ForgotForm";
+import { FormShell } from "@/components/forms/FormShell";
 
 export const metadata: Metadata = { title: "Reset your password" };
 
 export default function ForgotPage() {
   return (
-    <div className="wrap auth">
-      <p className="eyebrow">Password</p>
-      <h1>Reset your password</h1>
-      <p className="lead-sm">Enter your e-mail and we will send a 6-digit reset code.</p>
+    <FormShell
+      eyebrow="Password" tone="steel" icon="key"
+      title={<>Forgot it? <span className="marker">No stress.</span></>}
+      lead="Type your e-mail and we send you a 6-digit code. It works for 15 minutes."
+      below={<>Remembered it? <Link href="/login">Log in</Link></>}
+    >
       <ForgotForm />
-      <p className="below">Remembered it? <Link href="/login">Log in</Link></p>
-    </div>
+    </FormShell>
   );
 }

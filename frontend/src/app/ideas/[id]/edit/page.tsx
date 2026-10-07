@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { FormShell } from "@/components/forms/FormShell";
 import { IdeaForm } from "@/components/ideas/IdeaForm";
 import { isUuid } from "@/lib/query";
 import { apiFind, getMe } from "@/lib/server-api";
@@ -21,11 +22,19 @@ export default async function EditIdeaPage({ params }: Props) {
   if (!idea) notFound();
   if (!idea.can_edit) redirect(`/ideas/${id}`);
   return (
-    <div className="wrap auth">
-      <p className="breadcrumbs"><Link href={`/ideas/${id}`}>{idea.title}</Link> / Edit</p>
-      <h1>Edit idea</h1>
-      {idea.review_note && <blockquote className="note" style={{ margin: "16px 0 24px" }}>{idea.review_note}</blockquote>}
+    <FormShell
+      eyebrow="Edit idea" tone="steel" icon="ideas"
+      crumbs={<p className="breadcrumbs"><Link href={`/ideas/${id}`}>{idea.title}</Link> / Edit</p>}
+      title={<>Make it <span className="marker">better</span></>}
+      lead={idea.review_note ? "Student Government left you a note. Fix what it asks for, save, and send the idea back to review from its page." : "Change what you need, then save."}
+    >
+      {idea.review_note && (
+        <figure className="review-note">
+          <figcaption>Student Government says</figcaption>
+          <blockquote>{idea.review_note}</blockquote>
+        </figure>
+      )}
       <IdeaForm idea={idea} campus={me.campus_label} />
-    </div>
+    </FormShell>
   );
 }

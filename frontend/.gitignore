@@ -47,3 +47,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# routes.spec screenshots (SHOTS_DIR)
+/tests/e2e/shots/

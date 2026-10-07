@@ -3,7 +3,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmptyState } from "@/components/EmptyState";
 import { EventCard } from "@/components/EventCard";
+import { Icon } from "@/components/Icon";
+import { PageHero } from "@/components/PageHero";
 import { ApiError } from "@/lib/errors";
 import { firstParam, qs } from "@/lib/query";
 import { apiGet, getMe } from "@/lib/server-api";
@@ -29,30 +32,35 @@ export default async function EventsPage({ searchParams }: Props) {
   const curator = me?.status === "active" && (me.role === "curator" || me.role === "admin");
 
   return (
-    <div className="wrap detail">
-      <div className="page-head section-head">
-        <div>
-          <p className="eyebrow">On the Hub</p>
-          <h1>Events</h1>
-          <p>Events across the network. Many of them started as a student idea.</p>
+    <>
+      <PageHero
+        tone="teal" icon="events" eyebrow="On the calendar" note="tap I'm in, bring a friend"
+        title={<>What&apos;s <span className="marker">on</span></>}
+        lead="Pick a night, say you are in, and walk in. Many of these started as a student idea."
+      >
+        {curator && <Link className="btn btn-primary btn-large" href="/events/new">Publish an event<Icon name="arrow" /></Link>}
+        <Link className={curator ? "btn" : "btn btn-primary btn-large"} href="/ideas/new">Pitch an idea{!curator && <Icon name="arrow" />}</Link>
+      </PageHero>
+      <div className="wrap page-body">
+        <div className="filters">
+          <nav className="chips" aria-label="When">
+            <span className="chips-label" aria-hidden="true">Show</span>
+            <Link className="chip" href="/events" aria-current={when === "upcoming" ? "page" : undefined}>Upcoming</Link>
+            <Link className="chip" href="/events?when=past" aria-current={when === "past" ? "page" : undefined}>Past</Link>
+          </nav>
         </div>
-        {curator && <Link className="btn btn-primary" href="/events/new">Publish an event</Link>}
+        {page.items.length ? (
+          <div className="event-grid">{page.items.map((event) => <EventCard key={event.id} event={event} level={2} />)}</div>
+        ) : when === "past" ? (
+          <EmptyState icon="events">No events have taken place yet.</EmptyState>
+        ) : (
+          <EmptyState icon="events" action={{ href: "/ideas", label: "See the ideas" }}>Quiet week. Nothing is scheduled yet. Events show up here as soon as an idea gathers its team.</EmptyState>
+        )}
+        <div className="pager">
+          {cursor && <Link className="btn btn-small" href={base}>First page</Link>}
+          {page.next_cursor && <Link className="btn btn-small" href={`${base}${base.includes("?") ? "&" : "?"}cursor=${page.next_cursor}`}>Next page<Icon name="arrow" /></Link>}
+        </div>
       </div>
-      <nav className="chips" aria-label="When">
-        <Link className="chip" href="/events" aria-current={when === "upcoming" ? "page" : undefined}>Upcoming</Link>
-        <Link className="chip" href="/events?when=past" aria-current={when === "past" ? "page" : undefined}>Past</Link>
-      </nav>
-      {page.items.length ? (
-        <div className="cards">{page.items.map((event) => <EventCard key={event.id} event={event} />)}</div>
-      ) : (
-        <p className="empty">
-          {when === "past" ? "No events have taken place yet." : <>Nothing is scheduled yet. Events appear here when <Link href="/ideas">ideas</Link> gather a team.</>}
-        </p>
-      )}
-      <div className="pager">
-        {cursor && <Link href={base}>← First page</Link>}
-        {page.next_cursor && <Link href={`${base}${base.includes("?") ? "&" : "?"}cursor=${page.next_cursor}`}>Next page →</Link>}
-      </div>
-    </div>
+    </>
   );
 }

@@ -36,14 +36,21 @@ test("every internal link on the main pages answers without an error", async ({ 
   }
 });
 
-test("the mobile menu opens with the five items and closes on navigation", async ({ page }) => {
+test("the mobile menu opens with the seven items, traps the page behind it and closes on navigation", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");
   await page.getByRole("button", { name: "Open menu" }).click();
   const nav = page.getByRole("navigation", { name: "Main" });
-  for (const item of ["Academic", "International", "Community", "Personal", "Forum"]) {
+  for (const item of ["Events", "Ideas", "Academic", "International", "Community", "Personal", "Forum"]) {
     await expect(nav.getByRole("link", { name: item })).toBeVisible();
   }
+  // the open menu is a sheet: focus moves into it and the page behind is inert until it closes
+  await expect(nav.getByRole("link", { name: "Events" })).toBeFocused();
+  await expect(page.locator("main")).toHaveAttribute("inert", "");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
+  await expect(page.locator("main")).not.toHaveAttribute("inert", "");
+  await page.getByRole("button", { name: "Open menu" }).click();
   // a guest can sign up or log in from the phone menu too
   await expect(nav.getByRole("link", { name: "Join" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Log in" })).toBeVisible();

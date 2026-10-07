@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/client-api";
 import { Field } from "../forms/Field";
+import { Notice } from "../forms/Notice";
 import { FormError } from "../forms/FormError";
 import { useSubmit } from "../forms/useSubmit";
 
@@ -35,10 +36,10 @@ export function VerifyForm({ email }: { email: string }) {
   return (
     <form className="form" onSubmit={onSubmit}>
       <FormError error={confirm.error ?? resend.error} />
-      {resent && <div className="notice" role="status">We sent a new code to {email}.</div>}
+      {resent && <Notice kind="ok" role="status">We sent a new code to <span className="break-anywhere">{email}</span>.</Notice>}
       <Field label="Confirmation code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value)} error={confirm.fieldError("code")} />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={confirm.pending}>{confirm.pending ? "Checking…" : "Confirm"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={confirm.pending} aria-busy={confirm.pending}>{confirm.pending ? "Checking…" : "Confirm"}</button>
         <button className="link-button" type="button" onClick={onResend} disabled={resend.pending}>Send a new code</button>
       </div>
     </form>

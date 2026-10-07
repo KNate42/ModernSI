@@ -1,4 +1,4 @@
-// Account menu in the header: profile, settings, review queue for Student Government, log out.
+// Account menu in the header (a pill on the navy bar): profile, settings, review queue for Student Government, log out.
 // This work made by Anfinogentov Nikita
 "use client";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client-api";
 import type { Me } from "@/lib/types";
+import { Icon } from "./Icon";
 
 export function UserMenu({ me }: { me: Me }) {
   const [open, setOpen] = useState(false);
@@ -38,7 +39,8 @@ export function UserMenu({ me }: { me: Me }) {
     <div className="user-menu" ref={box}>
       <button className="user-button" type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
         <span className="avatar" aria-hidden="true">{me.display_name.slice(0, 1).toUpperCase()}</span>
-        <span>{me.display_name}</span>
+        <span className="user-name">{me.display_name}</span>
+        <Icon name="caret" className="user-caret" />
       </button>
       {open && (
         <div className="menu" role="menu">

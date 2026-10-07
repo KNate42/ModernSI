@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { FormShell } from "@/components/forms/FormShell";
 import { firstParam, safeNext } from "@/lib/query";
 import { getMe } from "@/lib/server-api";
 
@@ -17,14 +18,13 @@ export default async function LoginPage({ searchParams }: Props) {
   const me = await getMe();
   if (me) redirect(me.status === "pending" ? "/verify" : safeNext(next));
   return (
-    <div className="wrap auth">
-      <p className="eyebrow">Welcome back</p>
-      <h1>Log in</h1>
-      <p className="lead-sm">Use the university e-mail you signed up with.</p>
+    <FormShell
+      eyebrow="Welcome back" icon="personal"
+      title={<>Good to see you <span className="marker">again</span></>}
+      lead="Log in with the university e-mail you signed up with."
+      below={<><Link href="/forgot">Forgot your password?</Link> · New here? <Link href="/join">Create an account</Link></>}
+    >
       <LoginForm next={next} reset={firstParam(params.reset) === "1"} />
-      <p className="below">
-        <Link href="/forgot">Forgot your password?</Link> · New here? <Link href="/join">Create an account</Link>
-      </p>
-    </div>
+    </FormShell>
   );
 }

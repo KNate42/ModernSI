@@ -3,14 +3,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Notice } from "@/components/forms/Notice";
+import { IdeaPath } from "@/components/IdeaPath";
 import { LocalTime } from "@/components/LocalTime";
+import { PageHero } from "@/components/PageHero";
 import { Progress } from "@/components/Progress";
 import { DecisionForm } from "@/components/ideas/DecisionForm";
 import { ReportButton } from "@/components/ideas/ReportButton";
 import { ResubmitButton } from "@/components/ideas/ResubmitButton";
 import { TeamButton } from "@/components/ideas/TeamButton";
 import { VoteButton } from "@/components/ideas/VoteButton";
-import { categoryLabels, scopeText, statusLabels } from "@/lib/format";
+import { categoryIcons, categoryLabels, categoryTints, scopeText, statusLabels } from "@/lib/format";
 import { isUuid, qs } from "@/lib/query";
 import { apiFind, apiTry, getMe } from "@/lib/server-api";
 import type { EventItem, IdeaDetail, Me, Page } from "@/lib/types";
@@ -31,22 +34,29 @@ function StatusPanel({ idea, me }: { idea: IdeaDetail; me: Me | null }) {
 
   if (idea.status === "open") {
     if (active && !idea.is_author) {
-      return <VoteButton ideaId={idea.id} voted={idea.my_vote} count={idea.vote_count} threshold={idea.vote_threshold} />;
+      return (
+        <div className="stack">
+          <h2>Back it</h2>
+          <VoteButton ideaId={idea.id} voted={idea.my_vote} count={idea.vote_count} threshold={idea.vote_threshold} />
+        </div>
+      );
     }
     return (
       <div className="stack">
+        <h2>Back it</h2>
         <Progress value={idea.vote_count} max={idea.vote_threshold} label="Support" />
         <p className="count muted"><b>{idea.vote_count} of {idea.vote_threshold}</b> students support this idea</p>
         <p className="muted">Open for support until <LocalTime iso={idea.expires_at} mode="date" />.</p>
         {!me && <Link className="btn btn-primary" href={loginLink}>Log in to support it</Link>}
         {me?.status === "pending" && <Link className="btn btn-primary" href="/verify">Confirm your e-mail to support it</Link>}
-        {idea.is_author && <p className="muted">This is your idea. Share the link so other students can support it.</p>}
+        {idea.is_author && <p className="muted">This is your idea. Share the link, so other students can back it.</p>}
       </div>
     );
   }
   if (idea.status === "in_review") {
     return (
       <div className="stack">
+        <h2>With Student Government</h2>
         <p>Student Government is reviewing this idea.</p>
         {reviewer && <DecisionForm ideaId={idea.id} />}
       </div>
@@ -55,6 +65,7 @@ function StatusPanel({ idea, me }: { idea: IdeaDetail; me: Me | null }) {
   if (idea.status === "needs_changes" || idea.status === "rejected") {
     return (
       <div className="stack">
+        <h2>{idea.status === "rejected" ? "Not this time" : "Almost there"}</h2>
         <p>{idea.status === "rejected" ? "Student Government decided not to take this idea further." : "Student Government asked for changes."}</p>
         {idea.review_note && <blockquote className="note">{idea.review_note}</blockquote>}
         {idea.status === "needs_changes" && idea.is_author && <ResubmitButton ideaId={idea.id} />}
@@ -63,11 +74,14 @@ function StatusPanel({ idea, me }: { idea: IdeaDetail; me: Me | null }) {
   }
   if (idea.status === "forming_team") {
     const ready = idea.team_size >= idea.team_min;
+    // the author and curators get the calendar button as the one crimson button of the page
+    const publisher = active && (idea.is_author || curator);
     return (
       <div className="stack">
+        <h2>Find your crew</h2>
         <p>Approved! Now it needs a team to make it happen.</p>
         {active ? (
-          <TeamButton ideaId={idea.id} inTeam={idea.in_team} size={idea.team_size} min={idea.team_min} canLeave={!idea.is_author} />
+          <TeamButton ideaId={idea.id} inTeam={idea.in_team} size={idea.team_size} min={idea.team_min} canLeave={!idea.is_author} quiet={publisher && ready} />
         ) : (
           <>
             <Progress value={idea.team_size} max={idea.team_min} label="Team" />
@@ -76,15 +90,15 @@ function StatusPanel({ idea, me }: { idea: IdeaDetail; me: Me | null }) {
             {me?.status === "pending" && <Link className="btn btn-primary" href="/verify">Confirm your e-mail to join</Link>}
           </>
         )}
-        {active && (idea.is_author || curator) && (ready
-          ? <Link className="btn btn-primary" href={`/events/new?idea=${idea.id}`}>Put it on the Hub</Link>
-          : <p className="muted">When {idea.team_min} people are in the team, you can put it on the Hub as an event.</p>)}
+        {publisher && (ready
+          ? <Link className="btn btn-primary" href={`/events/new?idea=${idea.id}`}>Put it on the calendar</Link>
+          : <p className="muted">When {idea.team_min} people are in the team, you can put it on the calendar as an event.</p>)}
       </div>
     );
   }
-  if (idea.status === "live") return <p>This idea is on the Hub as an event.</p>;
-  if (idea.status === "done") return <p>This idea became an event that has already taken place.</p>;
-  return <p>This idea did not collect enough support in time.</p>;
+  if (idea.status === "live") return <div className="stack"><h2>It is happening</h2><p>This idea is on the calendar as an event.</p></div>;
+  if (idea.status === "done") return <div className="stack"><h2>It happened</h2><p>This idea became an event, and the event has already taken place.</p></div>;
+  return <div className="stack"><h2>Time ran out</h2><p>This idea did not collect enough support in time.</p></div>;
 }
 
 export default async function IdeaPage({ params }: Props) {
@@ -104,61 +118,67 @@ export default async function IdeaPage({ params }: Props) {
   const active = me?.status === "active";
 
   return (
-    <div className="wrap detail">
-      <div className="page-head">
-        <p className="breadcrumbs"><Link href="/ideas">Ideas</Link> / {categoryLabels[idea.category]}</p>
-        <div className="badges">
-          <span className="badge">{categoryLabels[idea.category]} · {scopeText(idea.scope, idea.campus_label)}</span>
-          <span className="badge badge-accent">{statusLabels[idea.status]}</span>
+    <>
+      <PageHero
+        tone={categoryTints[idea.category]} icon={categoryIcons[idea.category]}
+        crumbs={
+          <>
+            <p className="breadcrumbs"><Link href="/ideas">Ideas</Link> / {categoryLabels[idea.category]}</p>
+            <div className="badges">
+              <span className="badge">{categoryLabels[idea.category]} · {scopeText(idea.scope, idea.campus_label)}</span>
+              <span className={`badge badge-accent status-${idea.status}`}>{statusLabels[idea.status]}</span>
+            </div>
+          </>
+        }
+        title={idea.title} lead={idea.summary} extra={<IdeaPath status={idea.status} />}
+      />
+      <div className="wrap detail">
+        {idea.is_hidden && (
+          <Notice kind="error">An admin has hidden this idea from the network. Only you and the admins can see it.</Notice>
+        )}
+        <div className="grid-2">
+          <aside className="card aside stack">
+            <StatusPanel idea={idea} me={me} />
+            {idea.can_edit && <Link className="btn btn-small" href={`/ideas/${idea.id}/edit`}>Edit idea</Link>}
+            {active && !idea.is_author && <ReportButton ideaId={idea.id} />}
+          </aside>
+          <article className="paper">
+            {idea.body_html ? (
+              <div className="prose" dangerouslySetInnerHTML={{ __html: idea.body_html }} />
+            ) : (
+              <p className="muted">The author has not added more details yet.</p>
+            )}
+            <p className="byline">
+              Pitched by <Link href={`/profile/${idea.author.id}`}>{idea.author.display_name}</Link>
+              {idea.author.campus_label ? ` · ${idea.author.campus_label}` : ""} · <LocalTime iso={idea.created_at} mode="date" />
+            </p>
+            {showTeam && idea.team.length > 0 && (
+              <section className="paper-block">
+                <h2>Team</h2>
+                <ul className="team-list" aria-label="Team">
+                  {idea.team.map((member) => (
+                    <li key={member.id}>
+                      <span className="avatar" aria-hidden="true">{member.display_name.slice(0, 1).toUpperCase()}</span>
+                      <Link href={`/profile/${member.id}`}>{member.display_name}</Link>
+                      {member.campus_label && <span className="muted">· {member.campus_label}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {events.length > 0 && (
+              <section className="paper-block">
+                <h2>On the calendar</h2>
+                <ul className="team-list">
+                  {events.map((event) => (
+                    <li key={event.id}><Link href={`/events/${event.id}`}>{event.title}</Link> <span className="muted">· <LocalTime iso={event.starts_at} /></span></li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </article>
         </div>
-        <h1>{idea.title}</h1>
-        <p>{idea.summary}</p>
       </div>
-      {idea.is_hidden && (
-        <p className="notice notice-error">An admin has hidden this idea from the network. Only you and the admins can see it.</p>
-      )}
-      <div className="grid-2">
-        <article>
-          {idea.body_html ? (
-            <div className="prose" dangerouslySetInnerHTML={{ __html: idea.body_html }} />
-          ) : (
-            <p className="muted">The author has not added more details.</p>
-          )}
-          <p className="byline">
-            Proposed by <Link href={`/profile/${idea.author.id}`}>{idea.author.display_name}</Link>
-            {idea.author.campus_label ? ` · ${idea.author.campus_label}` : ""} · <LocalTime iso={idea.created_at} mode="date" />
-          </p>
-          {showTeam && idea.team.length > 0 && (
-            <>
-              <h2 style={{ fontSize: 22, marginTop: 32 }}>Team</h2>
-              <ul className="team-list" aria-label="Team">
-                {idea.team.map((member) => (
-                  <li key={member.id}>
-                    <span className="avatar" aria-hidden="true">{member.display_name.slice(0, 1).toUpperCase()}</span>
-                    <Link href={`/profile/${member.id}`}>{member.display_name}</Link>
-                    {member.campus_label && <span className="muted">· {member.campus_label}</span>}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {events.length > 0 && (
-            <>
-              <h2 style={{ fontSize: 22, marginTop: 32 }}>On the Hub</h2>
-              <ul className="team-list">
-                {events.map((event) => (
-                  <li key={event.id}><Link href={`/events/${event.id}`}>{event.title}</Link> <span className="muted">· <LocalTime iso={event.starts_at} /></span></li>
-                ))}
-              </ul>
-            </>
-          )}
-        </article>
-        <aside className="card aside stack">
-          <StatusPanel idea={idea} me={me} />
-          {idea.can_edit && <Link className="btn" href={`/ideas/${idea.id}/edit`}>Edit idea</Link>}
-          {active && !idea.is_author && <ReportButton ideaId={idea.id} />}
-        </aside>
-      </div>
-    </div>
+    </>
   );
 }

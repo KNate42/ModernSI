@@ -30,7 +30,7 @@ export function ResetForm({ initialEmail }: { initialEmail: string }) {
       <Field label="Reset code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value)} error={fieldError("code")} />
       <Field label="New password" type="password" autoComplete="new-password" required minLength={10} hint="At least 10 characters." value={password} onChange={(event) => setPassword(event.target.value)} error={fieldError("password")} />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Saving…" : "Set new password"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Set new password"}</button>
       </div>
     </form>
   );

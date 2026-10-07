@@ -3,7 +3,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Icon } from "@/components/Icon";
 import { IdeaList } from "@/components/IdeaList";
+import { PageHero } from "@/components/PageHero";
 import { ApiError } from "@/lib/errors";
 import { categoryLabels } from "@/lib/format";
 import { firstParam, qs } from "@/lib/query";
@@ -43,37 +45,39 @@ export default async function IdeasPage({ searchParams }: Props) {
   };
 
   return (
-    <div className="wrap detail">
-      <div className="page-head section-head">
-        <div>
-          <p className="eyebrow">Student ideas → real initiatives</p>
-          <h1>Ideas</h1>
-          <p>
-            Students propose, the network supports.{" "}
-            {threshold ? `At ${threshold} votes an idea goes to Student Government.` : "With enough votes an idea goes to Student Government."}
-          </p>
+    <>
+      <PageHero
+        tone="sky" icon="ideas" eyebrow="Pitch it. Back it. Make it real." note="yours could be next"
+        title={<>Ideas worth <span className="marker">backing</span></>}
+        lead={`Pick one you would show up for and back it. ${threshold ? `At ${threshold} votes` : "With enough votes"} it goes to Student Government.`}
+      >
+        <Link className="btn btn-primary btn-large" href="/ideas/new">Pitch an idea<Icon name="arrow" /></Link>
+      </PageHero>
+      <div className="wrap page-body">
+        <div className="filters">
+          <nav className="chips" aria-label="Sort">
+            <span className="chips-label" aria-hidden="true">Sort</span>
+            {sorts.map((item) => (
+              <Link key={item.value} className="chip" href={link({ sort: item.value })} aria-current={item.value === sort ? "page" : undefined}>{item.label}</Link>
+            ))}
+          </nav>
+          <nav className="chips" aria-label="Category">
+            <span className="chips-label" aria-hidden="true">Show</span>
+            <Link className="chip" href={link({ category: undefined })} aria-current={!category ? "page" : undefined}>All</Link>
+            {Object.entries(categoryLabels).map(([value, label]) => (
+              <Link key={value} className="chip" href={link({ category: value })} aria-current={value === category ? "page" : undefined}>{label}</Link>
+            ))}
+          </nav>
         </div>
-        <Link className="btn btn-primary" href="/ideas/new">Propose an idea</Link>
+        <IdeaList
+          level={2} ideas={page.items} emptyAction={{ href: "/ideas/new", label: "Pitch the first one" }}
+          empty={category ? "No ideas in this category yet." : "No ideas yet."}
+        />
+        <div className="pager">
+          {cursor && <Link className="btn btn-small" href={link({})}>First page</Link>}
+          {page.next_cursor && <Link className="btn btn-small" href={link({ cursor: page.next_cursor })}>Next page<Icon name="arrow" /></Link>}
+        </div>
       </div>
-      <nav className="chips" aria-label="Sort">
-        {sorts.map((item) => (
-          <Link key={item.value} className="chip" href={link({ sort: item.value })} aria-current={item.value === sort ? "page" : undefined}>{item.label}</Link>
-        ))}
-      </nav>
-      <nav className="chips" aria-label="Category">
-        <Link className="chip" href={link({ category: undefined })} aria-current={!category ? "page" : undefined}>All</Link>
-        {Object.entries(categoryLabels).map(([value, label]) => (
-          <Link key={value} className="chip" href={link({ category: value })} aria-current={value === category ? "page" : undefined}>{label}</Link>
-        ))}
-      </nav>
-      <IdeaList
-        ideas={page.items}
-        empty={<>No ideas here yet. <Link href="/ideas/new">Propose the first one</Link>.</>}
-      />
-      <div className="pager">
-        {cursor && <Link href={link({})}>← First page</Link>}
-        {page.next_cursor && <Link href={link({ cursor: page.next_cursor })}>Next page →</Link>}
-      </div>
-    </div>
+    </>
   );
 }

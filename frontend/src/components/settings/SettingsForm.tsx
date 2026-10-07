@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "@/lib/client-api";
 import type { Profile } from "@/lib/types";
 import { Field } from "../forms/Field";
+import { Notice } from "../forms/Notice";
 import { FormError } from "../forms/FormError";
 import { useSubmit } from "../forms/useSubmit";
 
@@ -56,10 +57,10 @@ export function SettingsForm({ profile }: { profile: Profile }) {
 
   return (
     <form className="form" onSubmit={onSubmit}>
-      {!profile.extended && <p className="notice">Profile details cannot be edited right now. Try again in a few minutes.</p>}
-      <fieldset disabled={!profile.extended} style={{ border: 0, padding: 0, margin: 0, display: "grid", gap: 18 }}>
+      {!profile.extended && <Notice kind="info">Profile details cannot be edited right now. Try again in a few minutes.</Notice>}
+      <fieldset className="form-fields" disabled={!profile.extended}>
         <FormError error={error} />
-        {saved && <p className="notice" role="status">Saved.</p>}
+        {saved && <Notice kind="ok" role="status">Saved.</Notice>}
         <Field label="About me" multiline rows={4} maxLength={500} hint="Up to 500 characters." value={bio} onChange={(event) => setBio(event.target.value)} error={listError("bio")} />
         <Field label="Languages you speak" hint="Separate with commas, up to 10." value={languages} onChange={(event) => setLanguages(event.target.value)} error={listError("languages")} />
         <Field label="Interests" hint="Separate with commas, up to 15." value={interests} onChange={(event) => setInterests(event.target.value)} error={listError("interests")} />
@@ -76,7 +77,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
           </fieldset>
         </div>
         <div className="actions">
-          <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Saving…" : "Save profile"}</button>
+          <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Saving…" : "Save profile"}</button>
         </div>
       </fieldset>
     </form>

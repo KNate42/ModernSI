@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/client-api";
 import { Field } from "../forms/Field";
+import { Notice } from "../forms/Notice";
 import { FormError } from "../forms/FormError";
 import { useSubmit } from "../forms/useSubmit";
 
@@ -35,15 +36,15 @@ export function RequestCampusForm({ initialEmail }: { initialEmail: string }) {
   }
 
   if (sent) {
-    return <div className="notice" role="status">Thanks! We will write to {sent.email} as soon as {sent.domain} is on the network.</div>;
+    return <Notice kind="ok" role="status">Thanks! We will write to {sent.email} as soon as {sent.domain} is on the network.</Notice>;
   }
   return (
     <form className="form" onSubmit={onSubmit}>
       {error?.code === "domain_already_allowed" ? (
-        <div className="notice" role="status">
-          <p style={{ margin: "0 0 8px" }}>Good news: {domain} is already on the network.</p>
+        <Notice kind="ok" role="status">
+          <p>Good news: <span className="break-anywhere">{domain}</span> is already on the network.</p>
           <Link href="/join">Create your account</Link>
-        </div>
+        </Notice>
       ) : (
         <FormError error={error} />
       )}
@@ -54,7 +55,7 @@ export function RequestCampusForm({ initialEmail }: { initialEmail: string }) {
         onChange={(event) => { setDomainEdited(true); setDomain(event.target.value); }} error={fieldError("domain")}
       />
       <div className="actions">
-        <button className="btn btn-primary" type="submit" disabled={pending}>{pending ? "Sending…" : "Send request"}</button>
+        <button className="btn btn-primary btn-large" type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending…" : "Send request"}</button>
       </div>
     </form>
   );
