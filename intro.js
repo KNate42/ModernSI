@@ -5,19 +5,20 @@
  */
 
 export const INTRO_TIMING = {
-  fadeIn: 0.5,     // 0.0 – 0.5
-  hold: 0.8,       // 0.5 – 1.3
-  collapse: 1.2,   // 1.3 – 2.5
-  dot: 0.8,        // 2.5 – 3.3
-  burst: 0.6,      // 3.3 – 3.9
-  welcome: 0.6,    // 3.9 – 4.5
-  welcomeHold: 0.8, // 4.5 – 5.3
-  reveal: 0.7,     // 5.3 – 6.0
+  fadeIn: 0.5,     // 0.0 to 0.5
+  hold: 0.8,       // 0.5 to 1.3
+  collapse: 1.2,   // 1.3 to 2.5
+  dot: 0.8,        // 2.5 to 3.3
+  burst: 0.6,      // 3.3 to 3.9
+  welcome: 0.6,    // 3.9 to 4.5
+  welcomeHold: 0.8, // 4.5 to 5.3
+  reveal: 0.7,     // 5.3 to 6.0
 };
 
 const THREAD_COUNT = 16;
-// lilac, sky, mint and orchid: the threads carry colour, never plain white
-const THREAD_COLOURS = ["#B9A8FF", "#8FC4FF", "#8EF0CC", "#F5A8EA"];
+// butter, a light teal, a light periwinkle and a clear red: the palette of the slide, lifted so they glow on the navy ground
+// (the red stays a true red, a lighter mix turned salmon and drifted towards the pink the palette bans)
+const THREAD_COLOURS = ["#FCEAA8", "#7FC0C8", "#98A3E6", "#F0544C"];
 
 function makeThreads(count) {
   const threads = [];

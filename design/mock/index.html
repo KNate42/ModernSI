@@ -7,209 +7,687 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ModernSI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+  <title>ModernSI | Nothing happening? Start something.</title>
+  <meta name="description" content="ModernSI is the independent student network where micro-campus students pitch ideas, vote them up and turn them into real events.">
+  <!-- Sample data only: the design preview must not end up in search results. Remove this line in the app. -->
+  <meta name="robots" content="noindex">
+  <link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/manrope-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
+  <noscript><style>.intro { display: none !important; }</style></noscript>
   <script>
-    // Runs before first paint: applies a saved theme and decides whether this visit gets the intro.
+    // Runs before first paint: applies a saved theme, picks the motion mode and decides whether this visit gets the intro.
     (function () {
       var root = document.documentElement;
       try { var theme = localStorage.getItem("msi_theme"); if (theme === "light" || theme === "dark") root.dataset.theme = theme; } catch (e) {}
-      var forced = new URLSearchParams(location.search).has("intro");
+      var query = new URLSearchParams(location.search);
+      var calm = false;
+      try { calm = matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+      root.dataset.motion = query.get("still") === "1" || calm ? "still" : "full";
+      var forced = query.has("intro");
       try { if (forced || sessionStorage.getItem("msi_intro_seen") !== "1") root.dataset.intro = "1"; } catch (e) { root.dataset.intro = "1"; }
+      // There I set the flags this early so the first paint has no flash, and then guard against a module that never starts
+      // (opened from disk, blocked or failed to load): the page falls back to the calm, fully visible state and drops the intro.
+      var rescue = function () {
+        if (window.msiStarted) return;
+        root.dataset.motion = "still";
+        delete root.dataset.intro;
+      };
+      if (location.protocol === "file:") rescue(); else setTimeout(rescue, 4000);
     })();
   </script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232A1F8F'/%3E%3Cpath d='M16 16 C20 11 24 9 28 8 M16 16 C11 19 8 23 6 27 M16 16 C19 20 23 22 27 23' stroke='%239B85FF' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23F3F0FF'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='8' fill='%23243654' stroke='%23FCEAA8' stroke-width='2'/%3E%3Cpath d='M9 21l5-10 4 6 2-3 3 7' fill='none' stroke='%23FCEAA8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
-<body>
+<body id="top">
 
-<div class="intro" id="intro" role="dialog" aria-label="ModernSI intro" hidden>
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="ModernSI intro" hidden>
   <canvas aria-hidden="true"></canvas>
-  <div class="intro-word" data-intro-word>ModernSI</div>
+  <div class="intro-word" data-intro-word aria-hidden="true">ModernSI</div>
   <div class="intro-dot" data-intro-dot aria-hidden="true"></div>
   <div class="intro-welcome" data-intro-welcome>Welcome!</div>
   <button class="intro-skip" type="button" data-intro-skip>Skip intro</button>
 </div>
 
-<header class="header">
-  <div class="wrap">
-    <a class="logo" href="#top" aria-label="ModernSI home">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 16 C20 11 24 9 28 8 M16 16 C11 19 8 23 6 27 M16 16 C19 20 23 22 27 23" stroke="var(--accent-text)" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="16" cy="16" r="4.5" fill="currentColor"/></svg>
-      ModernSI
-    </a>
-    <nav class="nav" id="nav" aria-label="Main">
-      <a href="#pillars">Academic</a>
-      <a href="#pillars">International</a>
-      <a href="#ideas">Community</a>
-      <a href="#feed">Personal</a>
-      <span class="divider" aria-hidden="true"></span>
-      <a href="#campuses">Forum</a>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap header-bar">
+    <a class="logo" href="#top" aria-label="ModernSI, back to the top">Modern<b>SI</b></a>
+    <nav class="site-nav" aria-label="Main" data-site-nav>
+      <ul class="nav-group">
+        <li><a href="/events">Events</a></li>
+        <li><a href="/ideas">Ideas</a></li>
+      </ul>
+      <ul class="nav-group">
+        <li><a href="/academic">Academic</a></li>
+        <li><a href="/international">International</a></li>
+        <li><a href="/community">Community</a></li>
+        <li><a href="/personal">Personal</a></li>
+      </ul>
+      <ul class="nav-group">
+        <li><a href="/forum">Forum</a></li>
+      </ul>
+      <ul class="nav-group nav-account">
+        <li><a href="/login">Log in</a></li>
+        <li><a class="btn btn-butter" href="/join">Join</a></li>
+      </ul>
     </nav>
     <div class="header-actions">
-      <button class="icon-btn" type="button" id="theme-toggle" aria-label="Switch colour theme">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-      </button>
-      <a class="btn btn-primary" href="#top">Join</a>
-      <button class="icon-btn menu-btn" type="button" id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h18M3 17h18"/></svg>
+      <a class="header-login" href="/login">Log in</a>
+      <a class="btn btn-butter btn-small header-join" href="/join">Join</a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-label="Open menu" data-menu-button>
+        <span class="menu-open"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="menu-close"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></span>
       </button>
     </div>
   </div>
 </header>
 
-<main id="top">
-  <section class="hero">
-    <svg class="hero-net" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <g fill="none" stroke="currentColor" stroke-width="1">
-        <path d="M820 300 C 900 200, 1000 160, 1200 120"/>
-        <path d="M820 300 C 760 420, 700 500, 640 600"/>
-        <path d="M820 300 C 940 340, 1040 420, 1200 460"/>
-        <path d="M820 300 C 860 180, 880 90, 900 0"/>
-        <path d="M820 300 C 700 260, 600 280, 480 240"/>
-        <path d="M480 240 C 420 200, 380 120, 360 0"/>
-        <path d="M1040 200 C 1080 260, 1120 300, 1200 320"/>
-      </g>
-      <g fill="currentColor">
-        <circle cx="820" cy="300" r="6"/><circle cx="480" cy="240" r="4"/><circle cx="1040" cy="200" r="4"/><circle cx="700" cy="500" r="3"/>
-      </g>
-    </svg>
-    <div class="wrap">
-      <p class="eyebrow">An independent international student network</p>
-      <h1>One hub. Every campus.</h1>
-      <p class="lead">A digital ecosystem built around the student experience.</p>
-      <div class="actions">
-        <a class="btn btn-primary" href="#top">Join with your university email</a>
-        <a class="btn" href="#ideas">Explore ideas</a>
-      </div>
-      <div class="stats" aria-label="Network in numbers">
-        <div class="stat"><b>1,284</b><span>students</span></div>
-        <div class="stat"><b>9</b><span>campuses</span></div>
-        <div class="stat"><b>37</b><span>ideas became events</span></div>
-      </div>
-    </div>
-  </section>
+<!-- Honest label for the public preview: every number, name and date below is sample data. Remove this strip in the app. -->
+<div class="preview-strip" role="note"><strong>Design preview.</strong> All numbers, names and dates here are sample data.</div>
 
-  <section id="pillars">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">What lives here</p>
-          <h2>Four directions, one account</h2>
+<main id="main">
+
+<!-- 1. HERO -->
+<section class="hero" aria-label="Welcome">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="tag-sticker" data-reveal>By students, for small campuses</p>
+      <h1 class="hero-title">
+        <span class="hero-title-top">Nothing happening?<svg class="hero-underline" viewBox="0 0 320 14" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M3 8C30 2 50 12 82 6S130 3 160 8s52 5 82-1 54 3 75-1"/></svg></span>
+        <span class="hero-title-main"><span class="marker-box">Start something.</span></span>
+      </h1>
+      <p class="hero-lead">ModernSI is where students of nine micro-campuses pitch ideas, vote the good ones up and turn them into real events. You, your friends and a university <span class="nowrap">e-mail.</span> That&rsquo;s the whole recipe.</p>
+      <div class="hero-actions">
+        <a class="btn btn-main btn-large" href="/join"><span>Join with your uni <span class="nowrap">e-mail</span></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+        <p class="hand-note hand-note-hero"><svg viewBox="0 0 64 40" aria-hidden="true" focusable="false"><path d="M60 30C44 40 20 36 8 16"/><path d="M6 30 6 14 22 18"/></svg><span>free, takes 30 seconds</span></p>
+      </div>
+      <a class="next-chip tilt" href="#week">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6.5h18v3.7a1.8 1.8 0 0 0 0 3.6v3.7H3v-3.7a1.8 1.8 0 0 0 0-3.6V6.5ZM14.5 6.5v11"/></svg>
+        <span class="next-chip-text"><strong>Next up:</strong> CV clinic with alumni, today at 15:00. <span class="next-chip-count"><span data-countdown-label>Starts in</span> <span data-countdown>2 h 14 min</span></span></span>
+      </a>
+    </div>
+
+    <div class="collage">
+      <figure class="polaroid polaroid-food tilt" data-reveal>
+        <span class="tape" aria-hidden="true"></span>
+        <div class="polaroid-photo scene-dusk">
+          <span class="slot-tag" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 8h3.2l1.6-2.6h7.4L17.3 8h3.2v11h-17V8Z"/><circle cx="12" cy="13.2" r="3.4"/></svg>photo: you?</span>
+          <svg viewBox="0 0 300 268" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <circle class="halo" cx="236" cy="104" r="44"/>
+            <circle class="halo halo-wide" cx="236" cy="104" r="62"/>
+            <circle class="f-butter" cx="236" cy="104" r="24"/>
+            <path class="f-teal" d="M0 150C44 118 86 130 128 146c48 18 98-26 172-4v126H0Z"/>
+            <path class="f-navy" d="M0 184c58-26 118-8 176-12 46-3 88-14 124-6v102H0Z"/>
+            <path class="s-night" fill="none" stroke-width="2.2" d="M-4 24Q75 74 150 36T304 42"/>
+            <g class="f-butter s-night" stroke-width="1.6">
+              <circle cx="35" cy="49" r="6"/><circle cx="74" cy="57" r="6"/><circle cx="112" cy="53" r="6"/><circle cx="150" cy="36" r="6"/><circle cx="188" cy="23" r="6"/><circle cx="226" cy="21" r="6"/><circle cx="265" cy="27" r="6"/>
+            </g>
+            <rect class="f-royal s-night" x="14" y="196" width="138" height="12" rx="3" stroke-width="2.5"/>
+            <path class="s-night" fill="none" stroke-width="4" stroke-linecap="round" d="M28 208v34M138 208v34"/>
+            <ellipse class="f-cream s-night" cx="44" cy="190" rx="19" ry="6" stroke-width="2.2"/><ellipse class="f-butter" cx="44" cy="186" rx="12" ry="4.5"/>
+            <ellipse class="f-cream s-night" cx="86" cy="190" rx="19" ry="6" stroke-width="2.2"/><ellipse class="f-accent" cx="86" cy="186" rx="12" ry="4.5"/>
+            <ellipse class="f-cream s-night" cx="126" cy="190" rx="16" ry="5.5" stroke-width="2.2"/><ellipse class="f-teal" cx="126" cy="186" rx="10" ry="4"/>
+            <rect class="f-night" x="172" y="196" width="62" height="42" rx="10"/>
+            <rect class="f-teal s-night" x="166" y="186" width="74" height="14" rx="6" stroke-width="2.5"/>
+            <path class="s-cream" fill="none" stroke-width="3" stroke-linecap="round" d="M186 176c-9-10 9-14 0-26M203 176c-9-10 9-14 0-26M220 176c-9-10 9-14 0-26"/>
+            <path class="f-night" d="M0 244H300V268H0Z"/>
+            <path class="s-butter" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 8" d="M8 256H292"/>
+          </svg>
         </div>
-      </div>
-      <div class="pillars">
-        <a class="card pillar tint-violet" href="#pillars"><div class="node"></div><h3>Academic</h3>
-          <ul><li>Schedule</li><li>Courses</li><li>Professors</li><li>Resources</li><li>Deadlines</li></ul></a>
-        <a class="card pillar tint-sky" href="#pillars"><div class="node"></div><h3>International</h3>
-          <ul><li>Learning portals</li><li>Exchange opportunities</li><li>Scholarships</li><li>Conferences</li><li>International events</li></ul></a>
-        <a class="card pillar tint-mint" href="#ideas"><div class="node"></div><h3>Community</h3>
-          <ul><li>Speaking Club</li><li>Volunteering</li><li>Student Government</li><li>Student Voice</li><li>Campus events</li></ul></a>
-        <a class="card pillar tint-rose" href="#feed"><div class="node"></div><h3>Personal</h3>
-          <ul><li>Notifications</li><li>Activity history</li><li>Achievements</li><li>Digital portfolio</li></ul></a>
-      </div>
-    </div>
-  </section>
+        <figcaption>Food night</figcaption>
+      </figure>
 
-  <section id="ideas">
-    <div class="wrap">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Student ideas → real initiatives</p>
-          <h2>Your idea can become a campus activity</h2>
-          <p class="muted">Propose it, gather support, and Student Government takes it from there.</p>
+      <figure class="polaroid polaroid-study tilt" data-reveal>
+        <span class="tape tape-teal" aria-hidden="true"></span>
+        <div class="polaroid-photo scene-room">
+          <span class="slot-tag slot-tag-low" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 8h3.2l1.6-2.6h7.4L17.3 8h3.2v11h-17V8Z"/><circle cx="12" cy="13.2" r="3.4"/></svg>photo: you?</span>
+          <svg viewBox="0 0 240 214" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <rect class="f-night s-teal" x="22" y="18" width="84" height="92" rx="4" stroke-width="4"/>
+            <path class="s-teal" fill="none" stroke-width="3" d="M64 18v92M22 64h84"/>
+            <path class="f-butter" d="M88 34a14 14 0 1 1-12 22 11 11 0 0 0 12-22Z"/>
+            <g class="f-butter"><circle cx="38" cy="36" r="1.8"/><circle cx="50" cy="86" r="1.8"/><circle cx="92" cy="86" r="1.8"/><circle cx="34" cy="98" r="1.4"/></g>
+            <circle class="f-glow" cx="190" cy="100" r="58"/>
+            <circle class="halo" cx="190" cy="100" r="58"/>
+            <path class="s-cream" fill="none" stroke-width="5" stroke-linecap="round" d="M190 146C190 120 206 114 206 86"/>
+            <path class="f-butter s-cream" stroke-width="3" stroke-linejoin="round" d="M194 66h24l10 26h-44Z"/>
+            <path class="s-butter" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="2 7" d="M180 102 170 128M206 102v30M232 102l10 26"/>
+            <rect class="f-teal" x="0" y="150" width="240" height="64"/>
+            <rect class="f-navy" x="0" y="146" width="240" height="8"/>
+            <rect class="f-cream s-night" x="170" y="140" width="40" height="8" rx="3" stroke-width="2.5"/>
+            <rect class="f-accent s-night" x="20" y="128" width="64" height="18" rx="2" stroke-width="2.5"/>
+            <rect class="f-cream s-night" x="26" y="112" width="54" height="16" rx="2" stroke-width="2.5"/>
+            <rect class="f-royal s-night" x="32" y="98" width="44" height="14" rx="2" stroke-width="2.5"/>
+            <path class="f-butter s-night" stroke-width="2.5" d="M106 124h26v22h-26Z"/>
+            <path class="s-night" fill="none" stroke-width="2.5" d="M132 130h8a5 5 0 0 1 0 10h-8"/>
+            <path class="s-cream" fill="none" stroke-width="2.5" stroke-linecap="round" d="M112 116c-5-6 5-8 0-14M122 116c-5-6 5-8 0-14"/>
+          </svg>
         </div>
-        <a class="btn btn-primary" href="#ideas">Propose an idea</a>
-      </div>
-      <ol class="steps" aria-label="How an idea becomes an event">
-        <li class="step"><b>Idea</b><span>Any student proposes</span></li>
-        <li class="step"><b>Support</b><span>50 votes to go further</span></li>
-        <li class="step"><b>Review</b><span>Student Government decides</span></li>
-        <li class="step"><b>Team</b><span>Volunteers join in</span></li>
-        <li class="step"><b>On the Hub</b><span>It becomes an event</span></li>
-      </ol>
-      <div class="ideas-grid">
-        <article class="card spotlight">
-          <span class="tag">Event · whole network</span>
-          <h3>International Food Festival</h3>
-          <p class="muted">One evening, one table per country. Students cook a dish from home and share the story behind it.</p>
-          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="50" aria-valuenow="41" aria-label="Support"><i style="width:82%"></i></div>
-          <p class="muted"><b style="color:var(--fg)">41 of 50</b> students support this idea</p>
-          <a class="btn" href="#ideas">Support it</a>
-        </article>
-        <div class="card">
-          <h3>Trending this week</h3>
-          <ul class="idea-list">
-            <li><a href="#ideas"><span>Peer tutoring hour before exams<small>Academic initiative · Almaty</small></span><span class="votes">38</span></a></li>
-            <li><a href="#ideas"><span>Weekend speaking club in Spanish<small>Club · whole network</small></span><span class="votes">29</span></a></li>
-            <li><a href="#ideas"><span>Quiet study room open until midnight<small>Campus life · Tbilisi</small></span><span class="votes">24</span></a></li>
-            <li><a href="#ideas"><span>River clean-up with the eco club<small>Volunteering · Petropavl</small></span><span class="votes">17</span></a></li>
-            <li><a href="#ideas"><span>Open data hackathon<small>Research project · whole network</small></span><span class="votes">12</span></a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
+        <figcaption>Study room, 23:40</figcaption>
+      </figure>
 
-  <section id="events">
-    <div class="wrap">
-      <div class="section-head">
-        <div><p class="eyebrow">On the Hub</p><h2>Coming up</h2></div>
-      </div>
-      <div class="events">
-        <a class="card event" href="#events"><time>Oct 18 · 18:00</time><h3>Conversation night</h3><p class="muted">Online · whole network</p></a>
-        <a class="card event" href="#events"><time>Oct 22 · 15:00</time><h3>CV clinic with alumni</h3><p class="muted">Room 204 · Almaty</p></a>
-        <a class="card event" href="#events"><time>Oct 26 · 11:00</time><h3>Autumn volunteering day</h3><p class="muted">City park · Petropavl</p></a>
-        <a class="card event" href="#events"><time>Nov 2 · 19:00</time><h3>Board games &amp; tea</h3><p class="muted">Student lounge · Tbilisi</p></a>
-      </div>
-    </div>
-  </section>
-
-  <section id="feed">
-    <div class="wrap">
-      <div class="section-head">
-        <div><p class="eyebrow">Live across the network</p><h2>What just happened</h2></div>
-      </div>
-      <ul class="feed">
-        <li><span class="dot"></span><span>Aru proposed <a href="#ideas">Peer tutoring hour before exams</a><small>4 min ago · Almaty</small></span></li>
-        <li><span class="dot"></span><span><a href="#ideas">Weekend speaking club in Spanish</a> reached 25 votes<small>12 min ago · whole network</small></span></li>
-        <li><span class="dot"></span><span>Student Government approved <a href="#ideas">Board games &amp; tea</a><small>1 h ago · Tbilisi</small></span></li>
-        <li><span class="dot"></span><span>The team for <a href="#ideas">Autumn volunteering day</a> is complete<small>3 h ago · Petropavl</small></span></li>
-        <li><span class="dot"></span><span><a href="#events">CV clinic with alumni</a> is now on the Hub<small>5 h ago · Almaty</small></span></li>
-        <li><span class="dot"></span><span>A new campus joined the network: Yerevan<small>yesterday</small></span></li>
+      <ul class="stat-stickers" aria-label="The network in numbers">
+        <li class="stat-sticker stat-burst tilt" data-reveal>
+          <svg class="sticker-shape" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 58.6,12.2 69.9,8.6 74.1,19.8 86.9,20.5 83.4,33.9 96.8,39.3 87.6,50.0 95.4,60.4 85.2,66.9 86.0,78.7 73.8,79.9 70.7,93.0 58.2,86.0 50.0,97.8 41.5,87.1 30.0,91.6 25.6,80.6 13.7,78.9 16.0,66.4 3.2,60.7 13.0,50.0 3.8,39.5 15.3,33.3 14.1,21.4 25.7,19.6 29.7,7.8 41.7,13.7"/></svg>
+          <span><b>1,284</b><i>students</i></span>
+        </li>
+        <li class="stat-sticker stat-seal tilt" data-reveal>
+          <svg class="sticker-shape" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 56.2,6.6 62.9,6.0 68.1,10.3 75.5,10.3 77.5,18.2 86.3,18.5 85.8,27.0 92.3,30.7 92.3,37.6 95.6,43.4 93.2,50.0 97.2,56.8 90.2,61.8 93.5,69.8 86.2,73.3 84.9,80.2 78.9,83.3 75.1,89.0 67.7,88.8 63.5,96.0 56.0,91.6 50.0,97.4 43.8,93.1 37.1,94.1 31.8,89.9 24.7,89.4 22.3,81.9 13.6,81.5 14.4,72.9 7.4,69.5 7.9,62.4 4.5,56.5 6.5,50.0 3.1,43.3 9.7,38.2 6.3,30.1 14.1,26.9 14.9,19.6 21.1,16.7 25.1,11.2 32.1,10.8 36.5,4.2 44.0,8.5"/></svg>
+          <span><b>9</b><i>campuses</i></span>
+        </li>
+        <li class="stat-sticker stat-label tilt" data-reveal>
+          <span><b>37</b><i>ideas that became real events</i></span>
+        </li>
       </ul>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="campuses">
-    <div class="wrap">
-      <div class="section-head">
-        <div><p class="eyebrow">Campus network</p><h2>Students from nine campuses</h2></div>
+<!-- 2. IDEA RIBBON -->
+<section class="ribbons" aria-label="Ideas students are backing right now">
+  <div class="ribbon ribbon-ideas">
+    <div class="ribbon-track" data-marquee>
+      <ul class="ribbon-list">
+        <li>Free printing before deadlines</li>
+        <li>Peer tutoring hour before exams</li>
+        <li>Weekend speaking club in Spanish</li>
+        <li>Quiet study room open until midnight</li>
+        <li>Night bus after the library closes</li>
+        <li>River clean-up with the eco club</li>
+        <li>Open data hackathon</li>
+        <li>International Food Festival</li>
+        <li>Swap shelf for textbooks</li>
+      </ul>
+    </div>
+    <button class="ribbon-pause" type="button" aria-pressed="false" aria-label="Pause ticker" data-ticker-pause>
+      <svg class="icon icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8.5 5.5v13M15.5 5.5v13"/></svg>
+      <svg class="icon icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l11-6.5Z"/></svg>
+    </button>
+  </div>
+  <div class="ribbon ribbon-campuses" aria-hidden="true">
+    <div class="ribbon-track" data-marquee>
+      <ul class="ribbon-list">
+        <li>Almaty</li><li>Petropavl</li><li>Tbilisi</li><li>Yerevan</li><li>Tashkent</li><li>Bishkek</li><li>Baku</li><li>Astana</li><li>Shymkent</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3. JUST SHOW UP -->
+<section class="section show-up" id="week" aria-labelledby="week-title">
+  <div class="wrap show-up-grid">
+    <div class="section-head-copy show-up-copy">
+      <p class="tag-sticker" data-reveal>This week and next</p>
+      <h2 class="section-title" id="week-title">Just <span class="marker-box">show up.</span></h2>
+      <p class="section-lead">Tap I&rsquo;m in so we know how many chairs to find. Then walk in, say hi, leave when you want. Nobody checks.</p>
+    </div>
+
+    <article class="next-up on-night" aria-label="Next up" data-reveal>
+      <div class="next-up-main">
+        <p class="next-up-label">Next up</p>
+        <h3 class="next-up-title">CV clinic with alumni</h3>
+        <ul class="meta-list">
+          <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.3 2"/></svg><span>Today, 15:00</span></li>
+          <li><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg><span>Almaty, Room 204</span></li>
+        </ul>
       </div>
-      <div class="campuses">
-        <span class="campus">Almaty <small>KZ</small></span>
-        <span class="campus">Petropavl <small>KZ</small></span>
-        <span class="campus">Tbilisi <small>GE</small></span>
-        <span class="campus">Yerevan <small>AM</small></span>
-        <span class="campus">Tashkent <small>UZ</small></span>
-        <span class="campus">Bishkek <small>KG</small></span>
-        <span class="campus">Baku <small>AZ</small></span>
-        <span class="campus">Astana <small>KZ</small></span>
-        <span class="campus">Shymkent <small>KZ</small></span>
+      <div class="next-up-count">
+        <p class="next-up-count-label" data-countdown-label>Starts in</p>
+        <p class="countdown" role="timer" data-countdown>2 h 14 min</p>
+      </div>
+      <div class="next-up-action">
+        <a class="btn btn-butter btn-large" href="/login">I&rsquo;m in</a>
+        <p class="going"><span class="faces" aria-hidden="true"><i></i><i></i><i></i></span><span><b>23</b> going</span></p>
+        <p class="hand-note hand-note-night"><svg viewBox="0 0 64 40" aria-hidden="true" focusable="false"><path d="M58 8C44 2 20 6 8 24"/><path d="M6 10 6 26 22 22"/></svg><span>one tap, no forms</span></p>
+      </div>
+    </article>
+
+    <nav class="quick-access tilt" aria-label="Quick access" data-reveal>
+      <h3 class="quick-title">Quick access</h3>
+      <ul>
+        <li><a class="quick-row" href="/academic">
+          <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="3.5"/><path d="M3.5 10.5h17M8 3v4M16 3v4"/></svg></span>
+          <span class="quick-text"><strong>My schedule</strong><span>Classes, rooms, deadlines</span></span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="quick-row" href="/events">
+          <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6.5h18v3.7a1.8 1.8 0 0 0 0 3.6v3.7H3v-3.7a1.8 1.8 0 0 0 0-3.6V6.5ZM14.5 6.5v11"/></svg></span>
+          <span class="quick-text"><strong>Events</strong><span>What&rsquo;s on at your campus</span></span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a></li>
+        <li><a class="quick-row" href="/international">
+          <span class="quick-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="m15.8 8.2-2.1 5.5-5.5 2.1 2.1-5.5z"/></svg></span>
+          <span class="quick-text"><strong>Opportunities</strong><span>Exchanges, scholarships, conferences</span></span>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a></li>
+      </ul>
+    </nav>
+
+    <section class="week-strip" aria-label="The next seven days" data-reveal>
+      <header class="week-strip-head">
+        <h3>Next 7 days</h3>
+        <p>22 to 28 Oct</p>
+      </header>
+      <ol class="week-days">
+        <li class="week-day week-day-today">
+          <p class="week-day-name"><span class="week-dow">Thu</span><span class="week-num">22</span><span class="week-flag">Today</span></p>
+          <ul class="week-events">
+            <li><a class="week-event week-event-next" href="/events"><time datetime="15:00">15:00</time><span class="week-event-title">CV clinic with alumni</span><span class="week-event-where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Almaty</span></a></li>
+            <li><a class="week-event" href="/events"><time datetime="19:30">19:30</time><span class="week-event-title">Film night, subtitles on</span><span class="week-event-where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Baku</span></a></li>
+          </ul>
+        </li>
+        <li class="week-day">
+          <p class="week-day-name"><span class="week-dow">Fri</span><span class="week-num">23</span></p>
+          <ul class="week-events">
+            <li><a class="week-event" href="/events"><time datetime="14:00">14:00</time><span class="week-event-title">Campus photo hunt</span><span class="week-event-where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Yerevan</span></a></li>
+          </ul>
+        </li>
+        <li class="week-day week-day-weekend">
+          <p class="week-day-name"><span class="week-dow">Sat</span><span class="week-num">24</span></p>
+          <ul class="week-events">
+            <li><a class="week-event" href="/events"><time datetime="09:30">09:30</time><span class="week-event-title">Easy mountain walk</span><span class="week-event-where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Bishkek</span></a></li>
+          </ul>
+        </li>
+        <li class="week-day week-day-weekend week-day-empty">
+          <p class="week-day-name"><span class="week-dow">Sun</span><span class="week-num">25</span></p>
+          <div class="week-empty"><p>Nothing here yet.</p><a class="btn btn-small btn-teal" href="/ideas/new"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Pitch one</a></div>
+        </li>
+        <li class="week-day">
+          <p class="week-day-name"><span class="week-dow">Mon</span><span class="week-num">26</span></p>
+          <ul class="week-events">
+            <li><a class="week-event" href="/events"><time datetime="11:00">11:00</time><span class="week-event-title">Autumn volunteering day</span><span class="week-event-where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Petropavl</span></a></li>
+          </ul>
+        </li>
+        <li class="week-day week-day-empty">
+          <p class="week-day-name"><span class="week-dow">Tue</span><span class="week-num">27</span></p>
+          <div class="week-empty"><p>Nothing here yet.</p><a class="btn btn-small btn-teal" href="/ideas/new"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Pitch one</a></div>
+        </li>
+        <li class="week-day">
+          <p class="week-day-name"><span class="week-dow">Wed</span><span class="week-num">28</span></p>
+          <ul class="week-events">
+            <li><a class="week-event" href="/events"><time datetime="17:30">17:30</time><span class="week-event-title">Debate club open round</span><span class="week-event-where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Astana</span></a></li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+  </div>
+</section>
+
+<!-- 4. IDEA WALL -->
+<section class="section wall on-teal" aria-labelledby="wall-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-copy">
+        <p class="tag-sticker" data-reveal>The idea wall</p>
+        <h2 class="section-title" id="wall-title">Ideas that <span class="marker">actually happen.</span></h2>
+      </div>
+      <div class="section-head-side">
+        <p class="section-lead">37 ideas have already turned into real events. These are the ones climbing towards 50 votes right now. Give one a nudge, or stick up your own.</p>
+        <p class="hand-note hand-note-teal"><svg viewBox="0 0 64 40" aria-hidden="true" focusable="false"><path d="M6 8C20 2 44 6 56 24"/><path d="M58 10 58 26 42 22"/></svg><span>50 votes and it goes to review</span></p>
       </div>
     </div>
-  </section>
+
+    <ul class="wall-grid">
+      <li class="wall-item" data-slot="1" data-reveal>
+        <article class="sticker tilt" data-slot="1">
+          <span class="stamp">Almost there!</span>
+          <div class="sticker-top"><span class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h18c0 4.4-4 7.2-9 7.2S3 16.4 3 12ZM8.5 3.5c-1.2 1.6 1.2 2.6 0 4.5M12.5 3.5c-1.2 1.6 1.2 2.6 0 4.5M16.5 3.5c-1.2 1.6 1.2 2.6 0 4.5"/></svg></span><span class="where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.2 3 3.2 15 0 18M12 3c-3.2 3-3.2 15 0 18"/></svg>Whole network</span></div>
+          <h3 class="sticker-title"><a href="/ideas">International Food Festival</a></h3>
+          <p class="sticker-blurb">One evening, one table per country. Bring a dish from home and the story behind it.</p>
+          <svg class="sticker-art" viewBox="0 0 300 170" aria-hidden="true" focusable="false">
+            <path class="s-night" fill="none" stroke-width="3" stroke-linecap="round" d="M6 14Q80 54 150 26T294 16"/>
+            <g class="s-night" stroke-width="2.5" stroke-linejoin="round">
+              <path class="f-accent" d="M26 30l22 8-14 20z"/><path class="f-royal" d="M70 42l22 3-10 22z"/><path class="f-teal" d="M116 40l22-3-6 24z"/>
+              <path class="f-night" d="M162 30l22-6v26z"/><path class="f-accent" d="M208 24l22-5 2 25z"/><path class="f-royal" d="M252 20h22l-8 22z"/>
+            </g>
+            <g class="s-night" stroke-width="3" stroke-linejoin="round">
+              <path class="f-royal" d="M22 104h76c0 30-17 50-38 50S22 134 22 104Z"/>
+              <path class="f-teal" d="M112 104h76c0 30-17 50-38 50s-38-20-38-50Z"/>
+              <path class="f-accent" d="M202 104h76c0 30-17 50-38 50s-38-20-38-50Z"/>
+            </g>
+            <g class="f-cream s-night" stroke-width="3"><ellipse cx="60" cy="104" rx="38" ry="9"/><ellipse cx="150" cy="104" rx="38" ry="9"/><ellipse cx="240" cy="104" rx="38" ry="9"/></g>
+            <ellipse class="f-butter" cx="60" cy="103" rx="26" ry="5"/><ellipse class="f-teal" cx="150" cy="103" rx="26" ry="5"/><ellipse class="f-accent" cx="240" cy="103" rx="26" ry="5"/>
+            <g class="s-night" fill="none" stroke-width="3" stroke-linecap="round"><path d="M50 90c-8-10 8-12 0-24M68 90c-8-10 8-12 0-24M140 90c-8-10 8-12 0-24M158 90c-8-10 8-12 0-24M230 90c-8-10 8-12 0-24M248 90c-8-10 8-12 0-24"/></g>
+          </svg>
+          <div class="votes">
+            <p class="votes-count"><b>41</b><span>of 50 votes</span></p>
+            <progress class="votes-meter" value="41" max="50" aria-label="41 of 50 votes">41</progress>
+          </div>
+          <a class="btn btn-night btn-small sticker-back" href="/ideas" aria-label="Back it: International Food Festival">Back it</a>
+        </article>
+      </li>
+      <li class="wall-item" data-slot="2" data-reveal>
+        <article class="sticker tilt" data-slot="2">
+          <div class="sticker-top"><span class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 1 4 17.5v-12ZM20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 0 1.5-1.5v-12Z"/></svg></span><span class="where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Almaty</span></div>
+          <h3 class="sticker-title"><a href="/ideas">Peer tutoring hour before exams</a></h3>
+          <div class="votes">
+            <p class="votes-count"><b>38</b><span>of 50 votes</span></p>
+            <progress class="votes-meter" value="38" max="50" aria-label="38 of 50 votes">38</progress>
+          </div>
+          <a class="btn btn-teal btn-small sticker-back" href="/ideas" aria-label="Back it: Peer tutoring hour before exams">Back it</a>
+        </article>
+      </li>
+      <li class="wall-item" data-slot="3" data-reveal>
+        <article class="sticker tilt" data-slot="3">
+          <div class="sticker-top"><span class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h16v11h-8.5L7 20v-4H4V5Z"/><path d="M8 9.5h8M8 12.5h5"/></svg></span><span class="where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.2 3 3.2 15 0 18M12 3c-3.2 3-3.2 15 0 18"/></svg>Whole network</span></div>
+          <h3 class="sticker-title"><a href="/ideas">Weekend speaking club in Spanish</a></h3>
+          <div class="votes">
+            <p class="votes-count"><b>29</b><span>of 50 votes</span></p>
+            <progress class="votes-meter" value="29" max="50" aria-label="29 of 50 votes">29</progress>
+          </div>
+          <a class="btn btn-teal btn-small sticker-back" href="/ideas" aria-label="Back it: Weekend speaking club in Spanish">Back it</a>
+        </article>
+      </li>
+      <li class="wall-item" data-slot="4" data-reveal>
+        <article class="sticker tilt" data-slot="4">
+          <div class="sticker-top"><span class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8.2 8.2 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5Z"/></svg></span><span class="where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Tbilisi</span></div>
+          <h3 class="sticker-title"><a href="/ideas">Quiet study room open until midnight</a></h3>
+          <div class="votes">
+            <p class="votes-count"><b>24</b><span>of 50 votes</span></p>
+            <progress class="votes-meter" value="24" max="50" aria-label="24 of 50 votes">24</progress>
+          </div>
+          <a class="btn btn-butter btn-small sticker-back" href="/ideas" aria-label="Back it: Quiet study room open until midnight">Back it</a>
+        </article>
+      </li>
+      <li class="wall-item" data-slot="5" data-reveal>
+        <article class="sticker tilt" data-slot="5">
+          <div class="sticker-top"><span class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 9c2.2-2.4 4-2.4 5.8 0s3.6 2.4 5.8 0 4-2.4 5.8 0M2.5 15c2.2-2.4 4-2.4 5.8 0s3.6 2.4 5.8 0 4-2.4 5.8 0"/></svg></span><span class="where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.5s-7-6-7-11.7a7 7 0 0 1 14 0c0 5.7-7 11.7-7 11.7Z"/><circle cx="12" cy="9.8" r="2.4"/></svg>Petropavl</span></div>
+          <h3 class="sticker-title"><a href="/ideas">River clean-up with the eco club</a></h3>
+          <div class="votes">
+            <p class="votes-count"><b>17</b><span>of 50 votes</span></p>
+            <progress class="votes-meter" value="17" max="50" aria-label="17 of 50 votes">17</progress>
+          </div>
+          <a class="btn btn-teal btn-small sticker-back" href="/ideas" aria-label="Back it: River clean-up with the eco club">Back it</a>
+        </article>
+      </li>
+      <li class="wall-item" data-slot="6" data-reveal>
+        <article class="sticker tilt" data-slot="6">
+          <div class="sticker-top"><span class="badge-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 5l-4 14"/></svg></span><span class="where"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.2 3 3.2 15 0 18M12 3c-3.2 3-3.2 15 0 18"/></svg>Whole network</span></div>
+          <h3 class="sticker-title"><a href="/ideas">Open data hackathon</a></h3>
+          <div class="votes">
+            <p class="votes-count"><b>12</b><span>of 50 votes</span></p>
+            <progress class="votes-meter" value="12" max="50" aria-label="12 of 50 votes">12</progress>
+          </div>
+          <a class="btn btn-butter btn-small sticker-back" href="/ideas" aria-label="Back it: Open data hackathon">Back it</a>
+        </article>
+      </li>
+      <li class="wall-item wall-item-yours" data-reveal>
+        <article class="sticker sticker-yours tilt">
+          <span class="plus" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></span>
+          <div class="sticker-yours-copy">
+            <h3 class="sticker-title">Your idea goes here.</h3>
+            <p>One sentence and a campus is enough. Somebody out there is already thinking &ldquo;finally&rdquo;.</p>
+          </div>
+          <a class="btn btn-night" href="/ideas/new">Pitch it<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+        </article>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 5. ROUTE: IDEA TO EVENT -->
+<section class="section path on-night" id="how" aria-labelledby="how-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-copy">
+        <p class="tag-sticker" data-reveal>The map</p>
+        <h2 class="section-title" id="how-title">How an idea becomes an event</h2>
+      </div>
+      <p class="section-lead">Five stops. No paperwork, no committee maze. Most of the work is saying it out loud.</p>
+    </div>
+
+    <div class="route" data-route>
+      <svg class="route-wide" viewBox="0 0 1200 580" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path class="route-line" d="M 110 215 C 232 215 232 365 355 365 C 477 365 477 215 600 215 C 722 215 722 365 845 365 C 967 365 967 215 1090 215 C 1136 215 1166 195 1186 141"/>
+        <path class="route-head" d="M 1160 151 L 1188 137 L 1196 167"/>
+        <path class="route-dash" d="M 110 215 C 232 215 232 365 355 365 C 477 365 477 215 600 215 C 722 215 722 365 845 365 C 967 365 967 215 1090 215 C 1136 215 1166 195 1186 141"/>
+      </svg>
+      <svg class="route-tall" viewBox="0 0 58 1000" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path class="route-line" d="M 29 0 C 62 90 -4 170 29 250 C 62 330 -4 410 29 500 C 62 590 -4 670 29 750 C 62 830 -4 910 29 1000"/>
+        <path class="route-dash" d="M 29 0 C 62 90 -4 170 29 250 C 62 330 -4 410 29 500 C 62 590 -4 670 29 750 C 62 830 -4 910 29 1000"/>
+      </svg>
+      <ol class="stops">
+        <li class="stop stop-up">
+          <span class="stop-dot">1</span>
+          <div class="stop-card tilt">
+            <h3>Pitch it</h3>
+            <p>One sentence and your campus. Takes less time than choosing a coffee.</p>
+            <a class="stop-link" href="/ideas/new">Pitch yours</a>
+          </div>
+          <p class="hand-note hand-note-night stop-note"><svg viewBox="0 0 50 30" aria-hidden="true" focusable="false"><path d="M6 26C16 24 30 18 40 6"/><path d="M28 7l12-2 2 12"/></svg><span>you are here</span></p>
+        </li>
+        <li class="stop stop-down">
+          <span class="stop-dot">2</span>
+          <div class="stop-card tilt">
+            <h3>Get to 50 votes</h3>
+            <p>Your campus can vote. So can the other eight. Friends help, group chats help more.</p>
+          </div>
+        </li>
+        <li class="stop stop-up">
+          <span class="stop-dot">3</span>
+          <div class="stop-card tilt">
+            <h3>Student Government looks</h3>
+            <p>They read it and decide. You can see exactly where it stands, no guessing.</p>
+          </div>
+        </li>
+        <li class="stop stop-down">
+          <span class="stop-dot">4</span>
+          <div class="stop-card tilt">
+            <h3>Find your crew</h3>
+            <p>Volunteers join in, a date gets picked, somebody finds the room.</p>
+          </div>
+        </li>
+        <li class="stop stop-up stop-last">
+          <span class="stop-dot"><svg class="sticker-shape" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 60.0,12.5 73.0,10.2 77.3,22.7 90.9,26.4 85.8,40.4 98.0,50.0 86.3,59.7 90.3,73.3 77.6,77.6 73.0,89.9 59.9,86.9 50.0,97.7 40.4,85.6 26.1,91.4 23.1,76.9 10.0,73.1 12.2,60.1 3.6,50.0 13.6,40.2 8.4,26.0 23.8,23.8 26.3,9.0 40.0,12.8"/></svg><b>5</b></span>
+          <div class="stop-card tilt">
+            <h3>It&rsquo;s an event</h3>
+            <p>It lands on the calendar, people RSVP, you show up. Yes, really you.</p>
+            <a class="stop-link" href="/events">See what&rsquo;s on</a>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 6. FOUR DIRECTIONS -->
+<section class="section directions" aria-labelledby="doors-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-copy">
+        <p class="tag-sticker" data-reveal>The grown-up stuff</p>
+        <h2 class="section-title" id="doors-title">Four doors, <span class="marker">one account.</span></h2>
+      </div>
+      <p class="section-lead">Schedule, scholarships, clubs and a corner that is only yours. Pick a door.</p>
+    </div>
+    <ul class="direction-grid">
+      <li data-reveal>
+        <a class="direction-tile direction-academic tilt" href="/academic" aria-labelledby="door-academic-title door-academic-text">
+          <span class="direction-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 9l10-5 10 5-10 5-10-5Z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/></svg></span>
+          <h3 id="door-academic-title">Academic</h3>
+          <p id="door-academic-text">When is class, where is the room, what is due on Friday.</p>
+          <ul class="direction-items"><li>Schedule</li><li>Courses</li><li>Deadlines</li></ul>
+          <span class="direction-go" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </li>
+      <li data-reveal>
+        <a class="direction-tile direction-international tilt" href="/international" aria-labelledby="door-international-title door-international-text">
+          <span class="direction-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 4 3 11l7 2.5L12.5 21 21 4ZM10 13.5 21 4"/></svg></span>
+          <h3 id="door-international-title">International</h3>
+          <p id="door-international-text">Exchanges, scholarships and conferences that want you there.</p>
+          <ul class="direction-items"><li>Exchange programs</li><li>Scholarships</li><li>Conferences</li></ul>
+          <span class="direction-go" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </li>
+      <li data-reveal>
+        <a class="direction-tile direction-community tilt" href="/community" aria-labelledby="door-community-title door-community-text">
+          <span class="direction-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20s-8-4.8-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.2-8 11-8 11Z"/></svg></span>
+          <h3 id="door-community-title">Community</h3>
+          <p id="door-community-text">Clubs, volunteering and the people who run student life.</p>
+          <ul class="direction-items"><li>Speaking club</li><li>Volunteering</li><li>Student voice</li></ul>
+          <span class="direction-go" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </li>
+      <li data-reveal>
+        <a class="direction-tile direction-personal tilt" href="/personal" aria-labelledby="door-personal-title door-personal-text">
+          <span class="direction-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c.8-4 4-6 7.5-6s6.7 2 7.5 6"/></svg></span>
+          <h3 id="door-personal-title">Personal</h3>
+          <p id="door-personal-text">Your stuff in one place: what you did and what you earned.</p>
+          <ul class="direction-items"><li>Activity history</li><li>Achievements</li><li>Portfolio</li></ul>
+          <span class="direction-go" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7. NETWORK FEED -->
+<section class="section network" aria-labelledby="feed-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-copy">
+        <p class="tag-sticker" data-reveal>Live from the feed</p>
+        <h2 class="section-title" id="feed-title">Meanwhile, on the other <span class="marker">campuses</span></h2>
+      </div>
+      <p class="section-lead">Small campus does not mean quiet campus. Here is what happened in the last day.</p>
+    </div>
+    <ul class="feed-grid">
+      <li class="feed-note" data-reveal>
+        <p class="feed-meta"><span class="feed-campus">Petropavl</span><span class="feed-time">1 h ago</span></p>
+        <p>The team for <a href="/events">Autumn volunteering day</a> is complete.</p>
+      </li>
+      <li class="feed-note" data-reveal>
+        <p class="feed-meta"><span class="feed-campus">Baku</span><span class="feed-time">2 h ago</span></p>
+        <p><a href="/events">Film night, subtitles on</a> is now on the calendar.</p>
+      </li>
+      <li class="feed-note" data-reveal>
+        <p class="feed-meta"><span class="feed-campus">Almaty</span><span class="feed-time">3 h ago</span></p>
+        <p>A student pitched <a href="/ideas">Peer tutoring hour before exams</a>.</p>
+      </li>
+      <li class="feed-note" data-reveal>
+        <p class="feed-meta"><span class="feed-campus">Whole network</span><span class="feed-time">5 h ago</span></p>
+        <p><a href="/ideas">Weekend speaking club in Spanish</a> reached 25 votes.</p>
+      </li>
+      <li class="feed-note" data-reveal>
+        <p class="feed-meta"><span class="feed-campus">Tbilisi</span><span class="feed-time">Yesterday</span></p>
+        <p>Student Government approved <a href="/events">Board games &amp; tea</a>.</p>
+      </li>
+      <li class="feed-note" data-reveal>
+        <p class="feed-meta"><span class="feed-campus">Shymkent</span><span class="feed-time">Yesterday</span></p>
+        <p>Shymkent just passed 100 students.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- 8. CAMPUS TAGS -->
+<section class="section campuses" id="campuses" aria-labelledby="campuses-title">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-head-copy">
+        <p class="tag-sticker" data-reveal>Nine campuses, one network</p>
+        <h2 class="section-title" id="campuses-title">Which campus is <span class="marker">yours?</span></h2>
+      </div>
+      <p class="section-lead">Grab your tag. You are never the only one on your campus who wants something to happen, and the other eight are looking for people too.</p>
+    </div>
+    <ul class="tag-grid">
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">ALM</span><span class="tag-city">Almaty</span><span class="tag-country">Kazakhstan</span>
+        <span class="tag-students"><b>212</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">PET</span><span class="tag-city">Petropavl</span><span class="tag-country">Kazakhstan</span>
+        <span class="tag-students"><b>96</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">TBI</span><span class="tag-city">Tbilisi</span><span class="tag-country">Georgia</span>
+        <span class="tag-students"><b>148</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">YER</span><span class="tag-city">Yerevan</span><span class="tag-country">Armenia</span>
+        <span class="tag-students"><b>131</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">TAS</span><span class="tag-city">Tashkent</span><span class="tag-country">Uzbekistan</span>
+        <span class="tag-students"><b>187</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">BIS</span><span class="tag-city">Bishkek</span><span class="tag-country">Kyrgyzstan</span>
+        <span class="tag-students"><b>124</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">BAK</span><span class="tag-city">Baku</span><span class="tag-country">Azerbaijan</span>
+        <span class="tag-students"><b>119</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">AST</span><span class="tag-city">Astana</span><span class="tag-country">Kazakhstan</span>
+        <span class="tag-students"><b>163</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot"><div class="tag" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-route">Campus</span><span class="tag-code">SHY</span><span class="tag-city">Shymkent</span><span class="tag-country">Kazakhstan</span>
+        <span class="tag-students"><b>104</b> students</span><span class="tag-bars"></span></div></li>
+      <li class="tag-slot tag-slot-add"><a class="tag tag-add" href="/request-campus" data-reveal><span class="tag-body"></span><span class="tag-hole"></span>
+        <span class="tag-plus" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></span>
+        <span class="tag-city">Not on the list?</span><span class="tag-country">Ask us to add your campus.</span></a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 9. FINALE -->
+<section class="section finale on-night" aria-labelledby="finale-title">
+  <div class="wrap">
+    <h2 class="finale-title" id="finale-title">Your campus is small. <span class="marker">Your ideas aren&rsquo;t.</span></h2>
+    <div class="finale-row">
+      <a class="btn btn-main btn-large" href="/join"><span>Join with your uni <span class="nowrap">e-mail</span></span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
+      <p class="hand-note hand-note-night finale-note"><svg viewBox="0 0 80 50" aria-hidden="true" focusable="false"><path d="M76 30C54 48 20 44 10 14"/><path d="M2 26 9 10l15 8"/></svg><span>no spam, no portal vibes</span></p>
+      <p class="finale-burst tilt" data-reveal><svg class="sticker-shape" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><polygon points="50.0,3.0 58.6,12.2 69.9,8.6 74.1,19.8 86.9,20.5 83.4,33.9 96.8,39.3 87.6,50.0 95.4,60.4 85.2,66.9 86.0,78.7 73.8,79.9 70.7,93.0 58.2,86.0 50.0,97.8 41.5,87.1 30.0,91.6 25.6,80.6 13.7,78.9 16.0,66.4 3.2,60.7 13.0,50.0 3.8,39.5 15.3,33.3 14.1,21.4 25.7,19.6 29.7,7.8 41.7,13.7"/></svg><span>You&rsquo;d be<b>#1,285</b></span></p>
+    </div>
+  </div>
+</section>
+
 </main>
 
-<footer class="footer">
-  <div class="wrap">
-    <nav aria-label="Footer">
-      <a href="#top">About</a><a href="#pillars">Academic</a><a href="#pillars">International</a><a href="#ideas">Community</a><a href="#feed">Personal</a><a href="#campuses">Forum</a>
+<footer class="site-footer on-night">
+  <div class="wrap footer-grid">
+    <div class="footer-about">
+      <a class="logo" href="#top" aria-label="ModernSI, back to the top">Modern<b>SI</b></a>
+      <p>The student network for micro-campuses. Made by students, mostly between classes.</p>
+      <button class="theme-toggle" type="button" role="switch" aria-checked="false" data-theme-toggle>
+        <span class="theme-icon theme-icon-light"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/></svg></span><span class="theme-icon theme-icon-dark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8.2 8.2 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5Z"/></svg></span>
+        <span class="theme-label">Dark theme</span>
+        <span class="theme-track" aria-hidden="true"><span class="theme-knob"></span></span>
+      </button>
+    </div>
+    <nav class="footer-column" aria-label="Do stuff">
+      <h2>Do stuff</h2>
+      <ul>
+        <li><a href="/ideas">Browse ideas</a></li>
+        <li><a href="/ideas/new">Pitch an idea</a></li>
+        <li><a href="/events">Events</a></li>
+        <li><a href="/join">Join</a></li>
+      </ul>
     </nav>
-    <p>ModernSI is an independent student project and is not affiliated with, endorsed by, or sponsored by any university.</p>
+    <nav class="footer-column" aria-label="Find stuff">
+      <h2>Find stuff</h2>
+      <ul>
+        <li><a href="/academic">Academic</a></li>
+        <li><a href="/international">International</a></li>
+        <li><a href="/community">Community</a></li>
+        <li><a href="/personal">Personal</a></li>
+      </ul>
+    </nav>
+    <nav class="footer-column footer-column-wide" aria-label="The network">
+      <h2>The network</h2>
+      <ul>
+        <li><a href="#campuses">Campuses</a></li>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="/request-campus">Add your campus</a></li>
+        <li><a href="/forum">Forum</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/login">Log in</a></li>
+      </ul>
+    </nav>
+    <p class="legal">ModernSI is an independent student project and is not affiliated with, endorsed by, or sponsored by any university.</p>
   </div>
 </footer>
+
+<nav class="phone-bar" aria-label="Quick actions">
+  <a href="/events"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6.5h18v3.7a1.8 1.8 0 0 0 0 3.6v3.7H3v-3.7a1.8 1.8 0 0 0 0-3.6V6.5ZM14.5 6.5v11"/></svg><span>Events</span></a>
+  <a href="/ideas"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6h4c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3Z"/></svg><span>Ideas</span></a>
+  <a class="phone-bar-pitch" href="/ideas/new"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>Pitch</span></a>
+  <a href="/join"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c.8-4 4-6 7.5-6s6.7 2 7.5 6"/></svg><span>Join</span></a>
+</nav>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js" integrity="sha384-XmJ9SoHtVOHoQUcKvFAzVXwdkKo1Ie3bhmSoIAkcdsHGaIrVJIkmozyq0FJeb/Ly" crossorigin="anonymous"></script>
 <script type="module" src="page.js"></script>

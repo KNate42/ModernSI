@@ -1,7 +1,7 @@
 /*
  * Mock checks: intro timing and skip behaviour, review-focus edge cases, screenshots of both themes.
  * Needs the mock served on :4310 (`python3 -m http.server 4310` from design/mock) and internet access
- * (gsap comes from cdnjs, Manrope from Google Fonts). The intro is measured on its own timeline, not from page load.
+ * (gsap comes from cdnjs, the fonts are local files in fonts/). The intro is measured on its own timeline, not from page load.
  * Offline helpers: CHROMIUM_PATH points at a ready browser, GSAP_FILE serves a local gsap.min.js instead of cdnjs.
  * This work made by Anfinogentov Nikita
  */
@@ -99,7 +99,7 @@ const gone = (page, selector, timeout) => page.waitForSelector(selector, { state
 // Plays the intro live until its own timeline reaches `seconds`, then pauses everything and seeks to that exact time
 // (seek without suppressing events, so the canvas threads are redrawn). Playing up to the frame instead of seeking
 // all the way matters: the letter-collapse tweens are started by a callback at 1.3 s and a long seek would skip them.
-async function freezeAt(page, seconds) {
+async function freezeAt(page, seconds, timeout = 9000) {
   await page.evaluate(() => {
     window.gsap.globalTimeline.resume();
     window.__introTimeline()?.resume();
@@ -107,7 +107,7 @@ async function freezeAt(page, seconds) {
   await page.waitForFunction((t) => {
     const timeline = window.__introTimeline();
     return !!timeline && timeline.time() >= t;
-  }, seconds, { polling: "raf", timeout: 9000 });
+  }, seconds, { polling: "raf", timeout });
   await page.evaluate((t) => {
     const timeline = window.__introTimeline();
     window.gsap.globalTimeline.pause();
@@ -242,7 +242,9 @@ try {
     const { page } = await fresh({ viewport: { width: 1200, height: 800 }, deviceScaleFactor: 3 });
     await page.goto(BASE, { waitUntil: "commit" });
     await page.waitForFunction(() => !!window.__introTimeline?.(), null, { polling: "raf", timeout: 9000 });
-    await freezeAt(page, 3.5);
+    // There I allow far more time here: at DPR 3 the glow of every thread is drawn on a 3600 px canvas, a software renderer needs over a
+    // second per frame, and GSAP smooths such lag to 33 ms of timeline per frame, so reaching 3.5 s takes about 15 s of real time
+    await freezeAt(page, 3.5, 60000);
     await page.setViewportSize({ width: 700, height: 900 });
     await page.waitForTimeout(150);
     // seek again so the threads are redrawn through the normal update path at the new size
@@ -268,9 +270,12 @@ try {
         await page.evaluate(() => document.fonts.ready);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         check(overflow <= 0, `${scheme} ${width}px: no horizontal scroll (${overflow})`);
+        // There I reload with ?still=1 for the picture, so it shows the whole page and not stickers that wait for the scroll
+        await page.goto(BASE + "?still=1");
+        await page.evaluate(() => document.fonts.ready);
         await shot(page, `home-${scheme}-${width}.png`, { fullPage: true });
         if (width === 360) {
-          await page.click("#menu-btn");
+          await page.click("[data-menu-button]");
           await shot(page, `menu-${scheme}-360.png`);
         }
       });
