@@ -1,0 +1,235 @@
+# Visual refresh audit, 2026-10-07T14:23Z
+Every number below was copied from a command that was run in this pass (task 4, integration and QA). Nothing is estimated.
+
+## Source audit (npm run audit:site)
+audit clean: 108 files checked, engine matches the mock
+
+## Lint and types
+npm run lint: eslint finished with no output, exit 0
+npx tsc --noEmit: no output, exit 0
+
+## Palette: contrast and colour (mock tokens, python3 -I design/mock/contrast.py)
+light --fg           on --bg          13.67
+light --muted        on --bg           6.55
+light --accent-text  on --bg           5.07
+light --fg           on --surface     15.63
+light --muted        on --surface      7.49
+light --accent-text  on --surface      5.80
+light --fg           on --surface-2   13.05
+light --muted        on --surface-2    6.26
+light --accent-text  on --surface-2    4.84
+light --fg           on --tint-teal   12.76
+light --muted        on --tint-teal    6.12
+light --accent-text  on --tint-teal    4.73
+light --fg           on --tint-sky    12.73
+light --muted        on --tint-sky     6.11
+light --accent-text  on --tint-sky     4.72
+light --fg           on --tint-steel  12.38
+light --muted        on --tint-steel   5.93
+light --accent-text  on --tint-steel   4.59
+light --on-accent    on --accent       6.54
+light --on-teal      on --teal         5.01
+light --on-butter    on --butter      13.01
+light --on-navy      on --navy        12.13
+light --on-night     on --night       13.67
+light --on-night-muted on --night       10.59
+light --butter       on --night       13.01
+light --butter       on --navy        10.10
+dark  --fg           on --bg          13.67
+dark  --muted        on --bg           8.88
+dark  --accent-text  on --bg          13.01
+dark  --fg           on --surface     11.80
+dark  --muted        on --surface      7.67
+dark  --accent-text  on --surface     11.24
+dark  --fg           on --surface-2   10.63
+dark  --muted        on --surface-2    6.91
+dark  --accent-text  on --surface-2   10.12
+dark  --fg           on --tint-teal    9.01
+dark  --muted        on --tint-teal    5.85
+dark  --accent-text  on --tint-teal    8.57
+dark  --fg           on --tint-sky     9.84
+dark  --muted        on --tint-sky     6.39
+dark  --accent-text  on --tint-sky     9.37
+dark  --fg           on --tint-steel   8.94
+dark  --muted        on --tint-steel   5.81
+dark  --accent-text  on --tint-steel   8.51
+dark  --on-accent    on --accent       6.54
+dark  --on-teal      on --teal         5.01
+dark  --on-butter    on --butter      13.01
+dark  --on-navy      on --navy        12.13
+dark  --on-night     on --night       14.96
+dark  --on-night-muted on --night       11.59
+dark  --butter       on --night       14.24
+dark  --butter       on --navy        10.10
+all pairs pass, the palette follows the slide and stays colourful
+
+## Palette: contrast and colour (app tokens, python3 -I design/mock/contrast.py frontend/src/app/tokens.css)
+light --fg           on --bg          13.67
+light --muted        on --bg           6.55
+light --accent-text  on --bg           5.07
+light --fg           on --surface     15.63
+light --muted        on --surface      7.49
+light --accent-text  on --surface      5.80
+light --fg           on --surface-2   13.05
+light --muted        on --surface-2    6.26
+light --accent-text  on --surface-2    4.84
+light --fg           on --tint-teal   12.76
+light --muted        on --tint-teal    6.12
+light --accent-text  on --tint-teal    4.73
+light --fg           on --tint-sky    12.73
+light --muted        on --tint-sky     6.11
+light --accent-text  on --tint-sky     4.72
+light --fg           on --tint-steel  12.38
+light --muted        on --tint-steel   5.93
+light --accent-text  on --tint-steel   4.59
+light --on-accent    on --accent       6.54
+light --on-teal      on --teal         5.01
+light --on-butter    on --butter      13.01
+light --on-navy      on --navy        12.13
+light --on-night     on --night       13.67
+light --on-night-muted on --night       10.59
+light --butter       on --night       13.01
+light --butter       on --navy        10.10
+dark  --fg           on --bg          13.67
+dark  --muted        on --bg           8.88
+dark  --accent-text  on --bg          13.01
+dark  --fg           on --surface     11.80
+dark  --muted        on --surface      7.67
+dark  --accent-text  on --surface     11.24
+dark  --fg           on --surface-2   10.63
+dark  --muted        on --surface-2    6.91
+dark  --accent-text  on --surface-2   10.12
+dark  --fg           on --tint-teal    9.01
+dark  --muted        on --tint-teal    5.85
+dark  --accent-text  on --tint-teal    8.57
+dark  --fg           on --tint-sky     9.84
+dark  --muted        on --tint-sky     6.39
+dark  --accent-text  on --tint-sky     9.37
+dark  --fg           on --tint-steel   8.94
+dark  --muted        on --tint-steel   5.81
+dark  --accent-text  on --tint-steel   8.51
+dark  --on-accent    on --accent       6.54
+dark  --on-teal      on --teal         5.01
+dark  --on-butter    on --butter      13.01
+dark  --on-navy      on --navy        12.13
+dark  --on-night     on --night       14.96
+dark  --on-night-muted on --night       11.59
+dark  --butter       on --night       14.24
+dark  --butter       on --navy        10.10
+all pairs pass, the palette follows the slide and stays colourful
+
+## GitHub Pages copy (python3 -I design/sync_pages.py --check)
+the root copy matches design/mock
+
+## Routes in both themes and on both screens (tests/e2e/routes.spec.ts)
+53 routes x 2 themes x 2 viewports (1440x900 and 390x844) = 212 page checks. Each check: axe-core wcag2a + wcag2aa, no sideways scroll, nothing sticking out of the screen, no console error or warning, the chosen theme on <html>.
+Run: SHOTS_DIR=tests/e2e/shots npx playwright test tests/e2e/routes.spec.ts (inside the whole-suite run below), 24 tests, all passed.
+
+Totals per route group (axe violations, 'needs review' nodes that axe could not decide, pages that scroll sideways, elements sticking out, console lines):
+group      routes  checks  violations  needs review  h-scroll  sticking out  console
+home            2       8           0           550         0             0        0
+ideas          20      80           0           528         0             0        0
+events         11      44           0           206         0             0        0
+sections        6      24           0            73         0             0        0
+account         5      20           0            65         0             0        0
+auth            6      24           0            80         0             0        0
+errors          3      12           0            42         0             0        0
+total          53     212           0          1544         0             0        0
+
+What 'needs review' is (all of it is color-contrast, by the reason axe gives): color-contrast [bgGradient] 1258, color-contrast [pseudoContent] 218, color-contrast [imgNode] 36, color-contrast [shortTextContent] 16, color-contrast [elmPartiallyObscured] 12, color-contrast [bgOverlap] 4.
+bgGradient is text on a dotted band or a gradient (page hero bands, the teal wall, the dark route band); pseudoContent is the luggage tags and the speech-bubble tail; imgNode and shortTextContent are the numbers in the drawn stickers; elmPartiallyObscured is the butter marker boxes; bgOverlap is a week-strip title.
+
+Per route (statuses of the 4 checks, axe violations, needs-review nodes; every route also had 0 horizontal scroll, 0 sticking out, 0 console lines):
+route                   signed in as   status  violations  needs review
+home                    guest             200           0           278
+ideas                   guest             200           0            14
+ideas-filtered          guest             200           0            14
+ideas-empty             guest             200           0            14
+idea-open               guest             200           0            36
+idea-review             guest             200           0            36
+idea-rejected           guest             200           0            36
+idea-live               guest             200           0            36
+idea-cyrillic           guest             200           0            36
+idea-new-guest          guest             200           0            12
+review-guest            guest             404           0            14
+events                  guest             200           0            14
+events-past             guest             200           0            14
+event-running           guest             200           0            24
+event-online            guest             200           0            24
+event-from-idea         guest             200           0            24
+event-past              guest             200           0            24
+event-new-guest         guest             200           0            12
+academic                guest             200           0            10
+international           guest             200           0            14
+community               guest             200           0             7
+forum                   guest             200           0            14
+about                   guest             200           0            14
+personal-guest          guest             200           0            14
+profile                 guest             200           0            12
+join                    guest             200           0            14
+login                   guest             200           0            12
+forgot                  guest             200           0            12
+reset                   guest             200           0            12
+request-campus          guest             200           0            14
+not-found               guest             404           0            14
+idea-not-found          guest             404           0            14
+error-page              guest             500           0            14
+idea-open-author        author            200           0            36
+idea-changes-author     author            200           0            36
+idea-team-author        author            200           0            36
+idea-edit               author            200           0            20
+idea-edit-changes       author            200           0            20
+personal-author         author            200           0             9
+settings                author            200           0            20
+profile-own             author            200           0            12
+home-member             member            200           0           272
+idea-open-member        member            200           0            36
+idea-team-member        member            200           0            36
+idea-new                member            200           0            12
+event-upcoming-member   member            200           0            24
+personal-pending        pending           200           0            12
+verify                  pending           200           0            16
+idea-review-gov         gov               200           0            36
+review-gov              gov               200           0            12
+events-curator          curator           200           0            14
+event-new               curator           200           0            12
+event-new-idea          curator           200           0            20
+
+Not covered by a route: global-error.tsx (the page that replaces the whole document when the root layout itself fails) cannot be reached without breaking the layout; it was checked by eye in the foundation pass only.
+
+## Pixel check of the needs-review text (one-off probe, not kept in the repository)
+For each needs-review color-contrast node of 20 routes (home, home signed in, ideas, 4 idea pages, events, an event, join, about, academic, community, personal, idea form, settings, 404, error page, forgot, idea live, review) in both themes on both screens, the probe hid the text, took a screenshot of the box behind it and measured the contrast of the real text colour against every pixel.
+900 elements measured. Median pixel contrast reached the AA limit (4.5, or 3 for large text) for 899 of 900; the one exception is the h1 'Hi, Routes Author' on a phone in the dark theme, whose words sit inside a butter marker (the probe sets the h1 colour against the marker, the real pair --on-butter on --butter is 13.01:1 in the palette check above).
+658 of the 900 are plain text elements (no marker, box or title colour nested inside): all 658 have median >= the limit. The thinnest margin is 4.59:1 against 4.5 (the breadcrumb link, --accent-text on --tint-steel, light theme); where a letter of the same link lies on the centre of one of the 1.3 px dots of the band the contrast falls to 3.34:1 (4.46:1 at the first percentile of its pixels), so under 1% of the link.
+84 elements have a 5th-percentile pixel below the limit: all 84 are marker boxes or titles that contain one (the clip of a marker box includes its own navy border, which has the text colour), none is plain text.
+
+## End-to-end (npx playwright test, all specs, one worker, production build on 3100, seeded backend on 8100)
+a11y.spec.ts          8 passed
+audit.spec.ts         4 passed
+auth.spec.ts          6 passed
+events.spec.ts        4 passed
+home.spec.ts         14 passed
+ideas.spec.ts         5 passed
+intro.spec.ts         4 passed
+personal.spec.ts      9 passed
+routes.spec.ts       24 passed
+shell.spec.ts         6 passed
+total: 84 passed (7.6m)
+routes.spec.ts alone, with the same code: 24 passed (4.7m).
+The error page route (a production server whose API answers nothing, status 500) is held to axe, scroll and theme, but not to a clean console: the failed render is logged on purpose.
+
+## Build size (.next/static of the production build of this pass)
+JavaScript: 24 files, 736.7 KiB raw, 238.5 KiB gzip (all routes together)
+CSS: 2 files, 87.3 KiB raw, 18.9 KiB gzip (tokens, globals, pages and home styles)
+Fonts: 13 woff2 files, 326.1 KiB on disk; a browser fetches only the subsets of the characters it shows (Latin for the English text, Cyrillic Manrope for user text)
+
+## Backend
+Not run in this pass: the backend is untouched and the test stores belong to the e2e run. The last recorded result is the one in stage1-audit.txt (120 passed, 2026-10-06).
+
+## Defects found and fixed in this pass
+1. Pages that call notFound() or fail (for example a missing idea, the review queue for a guest, the error page) are rendered again in the browser by Next, and React then wiped data-theme and data-motion from <html>: the 404 showed the light theme to someone who had chosen dark, and on a phone the header had no burger and its links spilled over the bar. Found by routes.spec (theme check); fixed with one shared function (lib/boot.ts) that the head script and the new PageState component both run, before the first paint.
+2. A profile without bio, languages, interests or links showed an empty page under the title. It now says so, with a way to fill it in for the owner.
+3. One icon set: the homepage icon wrapper, the phone bar, the header, the theme switch and the user menu drew their own svg icons; they use components/Icon.tsx now. The hand note is one shared component (components/HandNote.tsx) instead of three copies.
+4. Dead code removed: the .old-home block in globals.css (41 lines), the home icon wrapper, the duplicated hand-note markup.
+5. The wall button for an empty network said 'Propose the first idea'; the site says Pitch everywhere else, so it is 'Pitch the first idea'.
+6. shell.spec: the phone bar check measured the footer before the new page had finished growing; it now waits for the page and measures until the result is stable.

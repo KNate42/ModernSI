@@ -1,0 +1,57 @@
+# Stage 1 audit — 2026-10-06T18:00Z
+
+## Source audit
+audit clean: 76 files checked, engine matches the mock
+
+## Palette: contrast and colour (mock tokens)
+all pairs pass, the palette is colourful and cool
+
+## Palette: contrast and colour (app tokens)
+light --fg           on --bg          14.30
+light --fg           on --surface     15.60
+light --muted        on --bg           6.55
+light --muted        on --surface      7.14
+light --accent-text  on --bg           7.14
+light --accent-text  on --surface      7.80
+light --on-accent    on --accent       6.45
+light --fg           on --tint-violet 12.71
+light --muted        on --tint-violet  5.82
+light --accent-text  on --tint-violet  6.35
+light --fg           on --tint-sky    13.43
+light --muted        on --tint-sky     6.15
+light --accent-text  on --tint-sky     6.71
+light --fg           on --tint-mint   13.95
+light --muted        on --tint-mint    6.39
+light --accent-text  on --tint-mint    6.97
+light --fg           on --tint-rose   13.07
+light --muted        on --tint-rose    5.98
+light --accent-text  on --tint-rose    6.53
+dark  --fg           on --bg          15.43
+dark  --fg           on --surface     13.53
+dark  --muted        on --bg           9.00
+dark  --muted        on --surface      7.89
+dark  --accent-text  on --bg           8.19
+dark  --accent-text  on --surface      7.18
+dark  --on-accent    on --accent       5.08
+dark  --fg           on --tint-violet 11.58
+dark  --muted        on --tint-violet  6.76
+dark  --accent-text  on --tint-violet  6.15
+dark  --fg           on --tint-sky    10.88
+dark  --muted        on --tint-sky     6.35
+dark  --accent-text  on --tint-sky     5.78
+dark  --fg           on --tint-mint    9.94
+dark  --muted        on --tint-mint    5.80
+dark  --accent-text  on --tint-mint    5.28
+dark  --fg           on --tint-rose   11.56
+dark  --muted        on --tint-rose    6.75
+dark  --accent-text  on --tint-rose    6.14
+all pairs pass, the palette is colourful and cool
+
+## End-to-end
+[34/35] [chromium] › tests/e2e/shell.spec.ts:16:5 › footer carries the independence statement
+[35/35] [chromium] › tests/e2e/shell.spec.ts:23:5 › unknown pages show a 404 with a way back
+  35 passed (1.2m)
+
+## Backend (pytest, real stores)
+................................................                         [100%]
+120 passed in 26.34s

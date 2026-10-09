@@ -1,0 +1,35 @@
+# Dev stores for ModernSI. Start: docker compose -f infra/docker-compose.yml up -d --wait
+name: modernsi
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment: { POSTGRES_USER: modernsi, POSTGRES_PASSWORD: modernsi, POSTGRES_DB: modernsi }
+    ports: ["15432:5432"]
+    volumes: [pg:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U modernsi"], interval: 2s, timeout: 3s, retries: 30 }
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["16379:6379"]
+    volumes: [redis:/data]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 2s, timeout: 3s, retries: 30 }
+  mongo:
+    image: mongo:8
+    ports: ["17017:27017"]
+    volumes: [mongo:/data/db]
+    healthcheck: { test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"], interval: 3s, timeout: 5s, retries: 30 }
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    environment:
+      CLICKHOUSE_USER: modernsi
+      CLICKHOUSE_PASSWORD: modernsi
+      CLICKHOUSE_DB: modernsi
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports: ["18123:8123"]
+    ulimits: { nofile: { soft: 262144, hard: 262144 } }
+    volumes: [clickhouse:/var/lib/clickhouse]
+    healthcheck: { test: ["CMD", "wget", "-qO-", "http://localhost:8123/ping"], interval: 2s, timeout: 3s, retries: 30 }
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports: ["11025:1025", "18025:8025"]
+volumes: { pg: {}, redis: {}, mongo: {}, clickhouse: {} }

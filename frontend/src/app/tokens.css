@@ -1,0 +1,107 @@
+/*
+ * Theme tokens: the three colour blocks are copied verbatim from the approved mock (design/mock/styles.css), then the layout
+ * and derived tokens that the shared components use. Check the colours with: python3 design/mock/contrast.py src/app/tokens.css
+ * This work made by Anfinogentov Nikita
+ */
+
+/* ---- colour tokens: light theme ---- */
+:root {
+  --bg: #F0F0EA;
+  --surface: #FFFFFF;
+  --surface-2: #E4ECEE;
+  --border: #B8C7D0;
+  --fg: #12243C;
+  --muted: #44566E;
+  --accent: #B4241E;
+  --on-accent: #FFFFFF;
+  --accent-text: #2F6E78;
+  --teal: #5A9CA4;
+  --on-teal: #12243C;
+  --butter: #FCEAA8;
+  --on-butter: #12243C;
+  --navy: #243654;
+  --on-navy: #FFFFFF;
+  --night: #12243C;
+  --on-night: #F0F0EA;
+  --on-night-muted: #C9D6E4;
+  --royal: #4860D8;
+  --periwinkle: #7884CC;
+  --tint-teal: #DCEBEC;
+  --tint-sky: #E2E8F6;
+  --tint-steel: #DDE6EE;
+  --ink: #12243C;
+  --intro-glow: #2B4F8A;
+  color-scheme: light;
+}
+
+/* ---- colour tokens: dark theme, picked with the switch ---- */
+:root[data-theme="dark"] {
+  --bg: #12243C;
+  --surface: #183048;
+  --surface-2: #1F3752;
+  --border: #38507A;
+  --fg: #F0F0EA;
+  --muted: #B6C5D4;
+  --accent-text: #FCEAA8;
+  --night: #0E1C30;
+  --tint-teal: #1B4650;
+  --tint-sky: #24386E;
+  --tint-steel: #2A4262;
+  color-scheme: dark;
+}
+
+/* ---- colour tokens: the same dark theme, picked by the system when nothing is chosen ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12243C;
+    --surface: #183048;
+    --surface-2: #1F3752;
+    --border: #38507A;
+    --fg: #F0F0EA;
+    --muted: #B6C5D4;
+    --accent-text: #FCEAA8;
+    --night: #0E1C30;
+    --tint-teal: #1B4650;
+    --tint-sky: #24386E;
+    --tint-steel: #2A4262;
+    color-scheme: dark;
+  }
+}
+
+/* ---- layout tokens and derived colours ---- */
+/* the font families come from the @fontsource packages imported in layout.tsx (the mock loads the same files by hand) */
+:root {
+  --font-display: "Bricolage Grotesque Variable", "Manrope Variable", system-ui, sans-serif;
+  --font-text: "Manrope Variable", system-ui, sans-serif;
+  --font-hand: "Caveat", "Bradley Hand", cursive;
+  --gutter: clamp(16px, 4vw, 40px);
+  --maxw: 1280px;
+  --edge-width: 3px;
+  --header-height: 68px;
+  /* the outline of a sticker, its hard shadow, the rim of a dark panel and the keyboard focus ring */
+  --edge: var(--fg);
+  --pop: var(--night);
+  --night-rim: var(--night);
+  --focus-page: var(--royal);
+  --focus-ring: var(--focus-page);
+  /* the filled part of a vote meter: royal on light cards, periwinkle on dark ones (royal is only 2.5:1 there) */
+  --meter: var(--royal);
+}
+:root[data-theme="dark"] {
+  --edge: var(--periwinkle);
+  --pop: var(--royal);
+  --night-rim: var(--border);
+  --focus-page: var(--butter);
+  --focus-ring: var(--focus-page);
+  --meter: var(--periwinkle);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --edge: var(--periwinkle);
+    --pop: var(--royal);
+    --night-rim: var(--border);
+    --focus-page: var(--butter);
+    --focus-ring: var(--focus-page);
+    --meter: var(--periwinkle);
+  }
+}
