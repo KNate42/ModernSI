@@ -57,3 +57,14 @@ async def test_emit_adds_outbox_row(hub):
         assert row.data == {"idea_title": "Food festival"}
         assert row.uid is not None
         assert row.shipped_at is None
+
+
+def test_templates_speak_of_the_calendar():
+    # the old "Hub" name is gone from every e-mail; ideas land "on the calendar" now
+    team_subject, team_body = templates.team_formed("Board games night", "http://site/ideas/1")
+    event_subject, event_body = templates.event_published("Board games night", "http://site/events/1")
+    assert "put it on the calendar" in team_body
+    assert event_subject == "It is on the calendar: Board games night"
+    assert "is now on the calendar" in event_body
+    for text in (team_subject, team_body, event_subject, event_body):
+        assert "Hub" not in text

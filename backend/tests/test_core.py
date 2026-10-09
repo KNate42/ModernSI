@@ -109,3 +109,10 @@ async def test_client_ip_ignores_forwarded_header_unless_trusted():
 
     assert client_ip(fake_request(), Settings(_env_file=None, trust_forwarded_for=False)) == "10.0.0.1"
     assert client_ip(fake_request(), Settings(_env_file=None, trust_forwarded_for=True)) == "203.0.113.9"
+
+
+def test_cookie_secure_follows_the_site_address():
+    # https site -> Secure cookie, plain http on localhost -> not Secure; an explicit value always wins
+    assert Settings(_env_file=None, site_url="https://modernsi.example").cookie_secure is True
+    assert Settings(_env_file=None, site_url="http://localhost:8080").cookie_secure is False
+    assert Settings(_env_file=None, site_url="http://localhost:8080", cookie_secure=True).cookie_secure is True

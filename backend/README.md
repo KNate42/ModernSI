@@ -18,6 +18,21 @@ uv run modernsi worker       # in a second terminal: feed shipping, mail, period
 
 Mail sent in development: http://localhost:18025
 
+`uv run modernsi seed-demo` fills the dev stores with the made-up demo network (campuses on `demo.example`,
+an account for every role with the password `MSI_DEMO_PASSWORD`, `modernsi-demo` by default, ideas, events, votes,
+the feed) and prints the logins. It is safe to run again: later runs only move the demo events back around today
+(and follow a changed demo password). `modernsi seed-demo --disable` closes the demo when a stack goes live: every
+account on `*.demo.example` is blocked and logged out, and the demo domains stop accepting sign-ups.
+`modernsi check-mail` fails when SMTP still points nowhere.
+
+## Docker image
+
+`Dockerfile` builds one image for the API (the default command), the worker (`modernsi worker`) and the one-shot
+init (`modernsi migrate`, then `modernsi seed-demo` in demo mode, or `modernsi check-mail` and
+`modernsi seed-demo --disable` in live mode). The worker runs with `--heartbeat /tmp/worker-alive`, which its
+healthcheck reads. It installs exactly `uv.lock` and runs as a
+non-root user. The root `compose.yml` uses it; see the root README.
+
 ## Tests
 
 ```bash

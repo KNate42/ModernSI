@@ -1,0 +1,38 @@
+# Caddy in front of the site: /api/* goes to the FastAPI service, everything else to the Next.js server.
+# SITE_ADDRESS decides the mode: http://localhost:8080 serves plain http on that port,
+# https://your.domain gets a free certificate from Let's Encrypt and redirects http to https
+# (keep https on 443, which new_env.py does: the automatic redirect does not carry another port).
+# This work made by Anfinogentov Nikita
+{
+	http_port {$HTTP_PORT}
+	https_port {$HTTPS_PORT}
+	# the admin API stays on 127.0.0.1:2019 inside the container, only for the healthcheck
+	admin 127.0.0.1:2019
+}
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# The API trusts X-Forwarded-For for rate limits, so Caddy always replaces it with the real client address;
+	# whatever a client sends in that header is thrown away here.
+	handle /api/* {
+		reverse_proxy api:8040 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	header {
+		-Server
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Content-Type-Options nosniff
+	}
+	# HSTS only on https, so a plain http://localhost run never teaches the browser to demand https
+	@https protocol https
+	header @https Strict-Transport-Security "max-age=31536000"
+}

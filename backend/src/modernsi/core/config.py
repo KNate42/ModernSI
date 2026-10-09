@@ -4,6 +4,7 @@ This work made by Anfinogentov Nikita
 """
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,7 +30,8 @@ class Settings(BaseSettings):
 
     site_url: str = "http://localhost:3000"
     allowed_origins: list[str] = ["http://localhost:3000"]
-    cookie_secure: bool = False
+    # None means "follow site_url": Secure on https, off on plain http (localhost)
+    cookie_secure: bool | None = None
     trust_forwarded_for: bool = False
     session_days: int = 30
     log_salt: str = "change-me"
@@ -39,11 +41,20 @@ class Settings(BaseSettings):
     team_min: int = 3
     stats_min_students: int = 25
 
+    # password of every demo account (modernsi seed-demo); scripts/new_env.py makes a random one for a public address
+    demo_password: str = "modernsi-demo"
+
     rl_register_per_hour: int = 5
     rl_login_per_15min: int = 10
     rl_codes_per_day: int = 10
     rl_votes_per_minute: int = 60
     rl_ideas_per_day: int = 5
+
+    @model_validator(mode="after")
+    def derive_cookie_secure(self):
+        if self.cookie_secure is None:
+            self.cookie_secure = self.site_url.startswith("https://")
+        return self
 
 
 @lru_cache

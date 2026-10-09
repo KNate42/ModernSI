@@ -1,0 +1,7 @@
+# Keeps the build context of backend/Dockerfile small and free of local secrets.
+# This work made by Anfinogentov Nikita
+.venv
+.env
+.pytest_cache
+**/__pycache__
+tests

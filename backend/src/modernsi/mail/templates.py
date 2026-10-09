@@ -47,12 +47,12 @@ def idea_decided(title, decision, note, url):
 def team_formed(title, url):
     return (
         f"The team is ready: {title}",
-        f"Enough people joined the team for “{title}”. Set a date and place to put it on the Hub: {url}" + signature,
+        f"Enough people joined the team for “{title}”. Set a date and place to put it on the calendar: {url}" + signature,
     )
 
 
 def event_published(title, url):
     return (
-        f"It is on the Hub: {title}",
-        f"An event for “{title}”, the idea you are part of, is now on the Hub: {url}" + signature,
+        f"It is on the calendar: {title}",
+        f"An event for “{title}”, the idea you are part of, is now on the calendar: {url}" + signature,
     )

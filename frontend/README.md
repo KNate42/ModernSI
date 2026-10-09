@@ -92,8 +92,9 @@ An inner page starts with `PageHero` (or `FormShell` for a form) and keeps to th
 
 ## Production notes
 
+- The root `compose.yml` runs the site from `Dockerfile`: a Next.js standalone build (`NEXT_OUTPUT=standalone`) served by `node server.js` as the non-root `node` user, with Caddy in front. Caddy sends `/api/*` straight to the API and everything else here, and overwrites `X-Forwarded-For` (see `../infra/caddy/Caddyfile`).
 - Set `API_URL` both for `npm run build` and for `npm run start`.
-- Put a reverse proxy (nginx) in front of `next start`, and make it overwrite `X-Forwarded-For` with the client address: `proxy_set_header X-Forwarded-For $remote_addr;`. The reason:
+- Without the compose stack, put a reverse proxy (nginx) in front of `next start`, and make it overwrite `X-Forwarded-For` with the client address: `proxy_set_header X-Forwarded-For $remote_addr;`. The reason:
   - Next passes an incoming `X-Forwarded-For` on to the API.
   - The API trusts that header when `MSI_TRUST_FORWARDED_FOR=true` and uses it for rate limits.
   - Without the overwrite, clients could choose their own IP.

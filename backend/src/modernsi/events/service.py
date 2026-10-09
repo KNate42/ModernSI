@@ -43,7 +43,7 @@ async def create_event(db, settings, user, data):
     if data.idea_id is not None:
         idea = await lock_idea(db, data.idea_id)
         if idea.author_id != user.id and user.role not in curators:
-            raise api_error(403, "forbidden", "Only the author or a curator can put this idea on the Hub")
+            raise api_error(403, "forbidden", "Only the author or a curator can put this idea on the calendar")
         if idea.status != "forming_team":
             raise api_error(409, "idea_not_ready", "This idea is not ready for an event")
         if idea.team_size < settings.team_min:

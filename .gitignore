@@ -1,0 +1,6 @@
+# Local settings and secrets of the stack (see .env.example).
+# This work made by Anfinogentov Nikita
+/.env
+
+# Database dumps made by scripts/backup.sh
+/backups/

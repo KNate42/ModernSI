@@ -1,11 +1,13 @@
 """
 Background worker: every 2 s ships the outbox and sends queued mail; every 10 min expires stale ideas,
-closes ideas whose event is over and purges old rows.
+closes ideas whose event is over and purges old rows. With a heartbeat file it touches it after every round,
+so the container healthcheck can tell a stuck worker from a working one.
 This work made by Anfinogentov Nikita
 """
 import asyncio
 import logging
 import time
+from pathlib import Path
 
 from modernsi.events.service import finish_events
 from modernsi.feed.shipper import purge_old, ship_outbox
@@ -25,7 +27,7 @@ async def run_once(hub, periodic=False):
     return result
 
 
-async def run_worker(hub, every=2.0, periodic_every=600):
+async def run_worker(hub, every=2.0, periodic_every=600, heartbeat=None):
     last_periodic = float("-inf")
     while True:
         periodic = time.monotonic() - last_periodic >= periodic_every
@@ -38,4 +40,6 @@ async def run_worker(hub, every=2.0, periodic_every=600):
         except Exception:
             # one bad round must not kill the worker; the next round retries
             log.exception("worker round failed")
+        if heartbeat is not None:
+            Path(heartbeat).touch()
         await asyncio.sleep(every)

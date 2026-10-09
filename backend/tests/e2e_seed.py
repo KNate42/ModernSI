@@ -20,7 +20,7 @@ from modernsi.feed.schema import CLICKHOUSE_TABLES, ensure_schema
 staff = [
     ("gov@uni.edu", "Gov Member", "student_gov"),
     ("curator@uni.edu", "Campus Curator", "curator"),
-    ("admin@uni.edu", "Hub Admin", "admin"),
+    ("admin@uni.edu", "Network Admin", "admin"),
 ]
 password = "e2e password 123"
 
