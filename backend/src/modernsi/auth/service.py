@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 
 from modernsi.auth.codes import check_code, clear_cooldown, issue_code
 from modernsi.auth.models import User
-from modernsi.auth.passwords import hash_password, verify_password
+from modernsi.auth.passwords import hash_password, hash_password_async, verify_password_async
 from modernsi.auth.sessions import drop_all_sessions
 from modernsi.campuses.service import find_domain
 from modernsi.core.db import utcnow
@@ -20,8 +20,11 @@ from modernsi.mail import templates
 from modernsi.mail.sender import send_now
 
 log = logging.getLogger("modernsi.auth")
-# I verify against this hash when the e-mail is unknown, so both answers take the same time
-dummy_hash = hash_password("this is not anybody's password")
+# I verify against this hash when the e-mail is unknown, so both answers take the same time. There I keep it
+# as a fixed string made once with the hasher's parameters (passwords.py), instead of hashing on import: argon2
+# takes 64 MB for every hash, and the worker and init import this module without ever logging anybody in.
+# Made with: hash_password("this is not anybody's password"); remake it if the hasher's parameters change.
+dummy_hash = "$argon2id$v=19$m=65536,t=3,p=4$BcqC7gRtjfu/paWhvXB2vA$Z/uNjtj2ZOiM95eweWhfdmqzGseB89+6Z2hiyMFwTWQ"
 
 
 def normalise_email(email):
@@ -54,7 +57,7 @@ async def register(db, hub, settings, data):
         raise api_error(422, "domain_not_allowed", "Your university e-mail domain is not on the list yet")
     if await find_user_by_email(db, email) is not None:
         raise api_error(409, "email_taken", "An account with this e-mail already exists")
-    user = User(email=email, password_hash=hash_password(data.password), display_name=data.display_name)
+    user = User(email=email, password_hash=await hash_password_async(data.password), display_name=data.display_name)
     user.domain = domain
     db.add(user)
     try:
@@ -92,9 +95,9 @@ async def login(db, hub, settings, data, ip):
     await hit(hub.redis, f"login:{ip}:{email}", settings.rl_login_per_15min, 900)
     user = await find_user_by_email(db, email)
     if user is None:
-        verify_password(dummy_hash, data.password)
+        await verify_password_async(dummy_hash, data.password)
         raise api_error(401, "invalid_credentials", "Wrong e-mail or password")
-    if not verify_password(user.password_hash, data.password):
+    if not await verify_password_async(user.password_hash, data.password):
         raise api_error(401, "invalid_credentials", "Wrong e-mail or password")
     if user.status == "blocked":
         raise api_error(403, "account_blocked", "This account is blocked")
@@ -117,7 +120,7 @@ async def reset_password(db, hub, data):
     if user is None:
         raise api_error(400, "invalid_code", "This code is not right")
     await check_code(hub.redis, "reset", user.id, data.code)
-    user.password_hash = hash_password(data.password)
+    user.password_hash = await hash_password_async(data.password)
     await db.commit()
     await drop_all_sessions(hub.redis, user.id)
 

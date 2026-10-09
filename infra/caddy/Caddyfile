@@ -15,15 +15,25 @@
 
 	# The API trusts X-Forwarded-For for rate limits, so Caddy always replaces it with the real client address;
 	# whatever a client sends in that header is thrown away here.
+	# API_MAX_CONNS and WEB_MAX_CONNS cap the requests in flight to each upstream; the ones above it wait in Caddy
+	# for a free connection. 0 (the default) is no limit; the low-memory mode sets them, so a burst of visitors queues
+	# for a moment instead of growing the API and the Next.js server past their memory caps. A slot is held for the
+	# whole request, slow uploads and downloads included, which is why the API gets more slots than the pages.
 	handle /api/* {
 		reverse_proxy api:8040 {
 			header_up X-Forwarded-For {remote_host}
+			transport http {
+				max_conns_per_host {$API_MAX_CONNS:0}
+			}
 		}
 	}
 
 	handle {
 		reverse_proxy web:3000 {
 			header_up X-Forwarded-For {remote_host}
+			transport http {
+				max_conns_per_host {$WEB_MAX_CONNS:0}
+			}
 		}
 	}
 

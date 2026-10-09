@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     clickhouse_user: str = "modernsi"
     clickhouse_password: str = "modernsi"
     clickhouse_db: str = "modernsi"
+    # Postgres connections each process may keep (pool) and open on top under load (overflow); every
+    # connection is a Postgres process of a few MB, so the low-memory mode (compose.small.yml) sets smaller ones.
+    # pool_recycle closes a pooled connection after that many seconds (-1: never), so a long-lived backend
+    # gives its memory back.
+    db_pool_size: int = 10
+    db_max_overflow: int = 10
+    db_pool_recycle: int = -1
 
     smtp_host: str = "localhost"
     smtp_port: int = 11025

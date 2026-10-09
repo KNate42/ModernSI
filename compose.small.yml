@@ -1,0 +1,148 @@
+# Low-memory mode of compose.yml for a server with 1 GB of RAM: switched on by LOW_MEMORY=on in .env
+# (python3 scripts/new_env.py --small writes it together with the COMPOSE_FILE line that loads this file).
+# Every service gets a memory cap and a small config from infra/small/. The caps are upper limits, not reservations:
+# the services that keep running are capped at 912 MB together (888 MB without Mailpit, which only runs in demo
+# mode) and use about half of that, so the kernel, Docker and SSH keep the rest of 1 GB, and the swap file
+# (scripts/swap.sh, required in this mode) takes a rare peak. The one-shots mongo-user and init run before api,
+# worker and web start, inside their share.
+# Without LOW_MEMORY the stack runs exactly as compose.yml says.
+# The caps come from measurements of the whole stack (startup, demo seed, logins, sign-up, bursts of 80 parallel
+# page loads with logins on top): api ~110-125 MB plus 64 MB while it hashes a password (argon2id), worker ~100 MB,
+# ClickHouse ~80 MB, the Next.js server ~35-80 MB, Postgres ~40 MB plus a few MB per connection, MongoDB ~35 MB,
+# the rest under 20 MB. Caddy lets at most 8 requests at a time through to Next.js and 16 to the API (see caddy).
+# This work made by Anfinogentov Nikita
+
+# There I keep a memory reservation under every cap: when the machine runs short, the kernel takes memory
+# (mostly file cache) back from the services above their reservation first.
+
+# Postgres connections of the API, the worker and init: at most 8 + 4 + 4 Postgres processes of a few MB each,
+# recycled every 5 minutes so a long-lived one gives its memory back (compose.yml's processes keep 10 + 10 each)
+x-small-db-api: &small-db-api { MSI_DB_POOL_SIZE: "4", MSI_DB_MAX_OVERFLOW: "4", MSI_DB_POOL_RECYCLE: "300" }
+x-small-db-other: &small-db-other { MSI_DB_POOL_SIZE: "2", MSI_DB_MAX_OVERFLOW: "2", MSI_DB_POOL_RECYCLE: "300" }
+
+services:
+  postgres:
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    volumes: ["./infra/small/postgres.conf:/etc/postgresql/postgresql.conf:ro"]
+    # measured: 80 MB was too tight, the postmaster was killed inside it while 20+ connections opened at once
+    mem_limit: 112m
+    mem_reservation: 64m
+
+  redis:
+    command: ["sh", "-c", "exec redis-server /usr/local/etc/redis/redis.conf --requirepass \"$$REDISCLI_AUTH\""]
+    volumes: ["./infra/small/redis.conf:/usr/local/etc/redis/redis.conf:ro"]
+    mem_limit: 24m
+    mem_reservation: 8m
+
+  mongo:
+    # pinned to one minor version: the parameters below were measured on 8.3, and mongod refuses to start on a
+    # parameter it does not know (keep it at or above the version compose.yml's mongo:8 has made the volume with)
+    image: mongo:8.3
+    # There I start MongoDB with --auth and without the image's own first start: that one runs mongosh
+    # (about 150 MB) next to mongod and needed a 270 MB cap; mongo-user below creates the root user instead.
+    # WiredTiger is set through its engine string: --wiredTigerCacheSizeGB refuses anything under 0.25 GB, more
+    # than this whole cap, and session_max: the default makes WiredTiger keep about 65 MB of session slots for
+    # tens of thousands of connections (measured: idle mongod 94 MB with it, 28 MB with 1000).
+    # The spill engine of 8.2+ (sorts and groups too big for memory go there) gets its smallest cache, sorts and
+    # groups spill above 16 MB instead of 100 MB, and tcmalloc hands freed memory back to the system.
+    command:
+      - --auth
+      - --wiredTigerEngineConfigString
+      - cache_size=32M,session_max=1000
+      - --setParameter
+      - diagnosticDataCollectionEnabled=false
+      - --setParameter
+      - spillWiredTigerCacheSizeMinMB=50
+      - --setParameter
+      - spillWiredTigerCacheSizeMaxMB=50
+      - --setParameter
+      - spillTableInsertBatchSizeBytes=4194304
+      - --setParameter
+      - internalQueryMaxBlockingSortMemoryUsageBytes=16777216
+      - --setParameter
+      - internalDocumentSourceGroupMaxMemoryBytes=16777216
+      - --setParameter
+      - internalQuerySlotBasedExecutionHashAggApproxMemoryUseInBytesBeforeSpill=16777216
+      - --setParameter
+      - tcmallocReleaseRate=10485760
+      - --setParameter
+      - tcmallocMaxPerCPUCacheSize=2097152
+    environment: { MONGO_INITDB_ROOT_USERNAME: "", MONGO_INITDB_ROOT_PASSWORD: "" }
+    # healthy once mongod listens on its network address (bash, not another mongosh inside the cap)
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/$$(hostname -i | cut -d' ' -f1)/27017"]
+      interval: 30s
+      start_period: 60s
+      start_interval: 2s
+    mem_limit: 136m
+    mem_reservation: 64m
+
+  # One-shot: creates MongoDB's root user on the first start (MongoDB's localhost exception, from inside mongo's
+  # network namespace), and on every later start checks that MONGO_PASSWORD still opens it.
+  mongo-user:
+    image: ${IMAGE_PREFIX:-ghcr.io/knate42/modernsi}-api:${IMAGE_TAG:-auto}
+    command: ["python", "/opt/mongo_user.py"]
+    network_mode: "service:mongo"
+    environment: { MONGO_USER: modernsi, MONGO_PASSWORD: "${MONGO_PASSWORD}" }
+    volumes: ["./infra/small/mongo_user.py:/opt/mongo_user.py:ro"]
+    depends_on: { mongo: { condition: service_healthy } }
+    restart: "no"
+    logging: { driver: json-file, options: { max-size: "1m", max-file: "1" } }
+    mem_limit: 48m
+
+  clickhouse:
+    volumes:
+      - ./infra/small/clickhouse-server.xml:/etc/clickhouse-server/config.d/low-memory.xml:ro
+      - ./infra/small/clickhouse-users.xml:/etc/clickhouse-server/users.d/low-memory.xml:ro
+    healthcheck: { interval: 30s, start_period: 90s, start_interval: 2s }
+    mem_limit: 152m
+    mem_reservation: 96m
+
+  init:
+    depends_on:
+      mongo-user: { condition: service_completed_successfully }
+    environment:
+      <<: *small-db-other
+      MALLOC_ARENA_MAX: "2"
+    mem_limit: 192m
+
+  api:
+    # one uvicorn worker (the default, written out so nobody adds more here)
+    command: ["uvicorn", "modernsi.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8040", "--no-server-header", "--workers", "1"]
+    environment:
+      <<: *small-db-api
+      MALLOC_ARENA_MAX: "2"
+    healthcheck: { interval: 30s, start_period: 60s, start_interval: 2s }
+    mem_limit: 216m
+    mem_reservation: 128m
+
+  worker:
+    environment:
+      <<: *small-db-other
+      MALLOC_ARENA_MAX: "2"
+    mem_limit: 120m
+    mem_reservation: 96m
+
+  web:
+    environment:
+      NODE_OPTIONS: --max-old-space-size=64
+    # busybox wget instead of a second Node process every few seconds inside the same cap
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/icon.svg"]
+      interval: 30s
+      start_period: 60s
+      start_interval: 2s
+    mem_limit: 104m
+    mem_reservation: 64m
+
+  caddy:
+    # at most 8 requests at a time to the Next.js server and 16 to the API, the rest wait in Caddy (see Caddyfile):
+    # measured, 40 parallel page loads took Next.js past a 48 MB heap. The API gets more: a request there costs
+    # little memory (password hashes run one at a time anyway), and a few slow uploads must not hold every slot.
+    environment: { WEB_MAX_CONNS: "8", API_MAX_CONNS: "16" }
+    mem_limit: 24m
+    mem_reservation: 12m
+
+  mailpit:
+    mem_limit: 24m
+    mem_reservation: 8m

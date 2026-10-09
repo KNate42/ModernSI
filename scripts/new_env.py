@@ -4,12 +4,14 @@ Writes the root .env for compose.yml from .env.example, with fresh random secret
   python3 scripts/new_env.py --site http://localhost:9080     # the same on another port
   python3 scripts/new_env.py --site https://modernsi.example.org   # a server with a domain, demo with a random password
   python3 scripts/new_env.py --site https://modernsi.example.org --live   # real mode: no demo data, real SMTP
+  python3 scripts/new_env.py --site https://modernsi.example.org --small  # a server with 1 GB of RAM (low-memory mode)
   python3 scripts/new_env.py --check                          # is .env usable? (scripts/up.sh runs this every time)
 It never overwrites an existing .env unless you add --force (the old secrets would no longer open the stores).
 Only the standard library, so it runs on any machine with Python 3.
 This work made by Anfinogentov Nikita
 """
 import argparse
+import os
 import secrets
 import sys
 from pathlib import Path
@@ -19,6 +21,10 @@ root = Path(__file__).resolve().parent.parent
 secret_names = ["POSTGRES_PASSWORD", "REDIS_PASSWORD", "MONGO_PASSWORD", "CLICKHOUSE_PASSWORD", "LOG_SALT"]
 local_hosts = ("localhost", "127.0.0.1")
 default_ports = {"http": 80, "https": 443}
+small_files = os.pathsep.join(["compose.yml", "compose.small.yml"])
+# below this the normal mode does not fit next to the OS. A "1 GB" server reports about 950-1000 MB and a "2 GB" one
+# about 1900-2000 MB (the kernel keeps the rest), so the line sits between them: 2 GB plus swap runs the normal mode
+small_machine_mb = 1536
 
 
 def fail(message):
@@ -50,6 +56,26 @@ def ports_of(site):
 
 def is_local(site):
     return urlsplit(site).hostname in local_hosts
+
+
+def memory_mb():
+    """RAM of this machine in MB from /proc/meminfo, or None where there is no such file (macOS, Windows)."""
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemTotal:"):
+                return int(line.split()[1]) // 1024
+    except (OSError, ValueError, IndexError):
+        return None
+    return None
+
+
+def suggest_small(values):
+    """A hint (never an error) when the normal mode is chosen on a machine with less than 1.5 GB of RAM."""
+    total = memory_mb()
+    if values.get("LOW_MEMORY", "off") != "on" and total is not None and total < small_machine_mb:
+        print(f"Note: this machine has {total} MB of RAM; the normal mode needs 2 GB (with swap) or more.")
+        print("  Use the low-memory mode: set LOW_MEMORY=on and COMPOSE_FILE=" + small_files + " in .env")
+        print("  (or make .env with --small), and run sudo ./scripts/swap.sh once. See 'Small server (1 GB)' in README.md.")
 
 
 def read_env(path):
@@ -88,17 +114,29 @@ def check(path):
             problems.append("a public demo with the published password modernsi-demo: set DEMO_PASSWORD to something only you know")
     if values.get("DEMO") != "on" and values.get("SMTP_HOST", "") in ("", "mailpit"):
         problems.append("DEMO is off but SMTP_HOST is empty or Mailpit: fill in your mail provider's SMTP settings")
+    # There I check both lines of the low-memory switch: LOW_MEMORY alone would pull the images and still start
+    # the stack without any memory caps, which is exactly what kills a 1 GB server
+    small = values.get("LOW_MEMORY", "off")
+    loads_small = "compose.small.yml" in values.get("COMPOSE_FILE", "")
+    if small not in ("on", "off"):
+        problems.append(f"LOW_MEMORY={small!r}: write on or off")
+    elif small == "on" and not loads_small:
+        problems.append("LOW_MEMORY=on but compose.small.yml is not loaded: add the line COMPOSE_FILE=" + small_files)
+    elif small == "off" and loads_small:
+        problems.append("LOW_MEMORY=off but COMPOSE_FILE still loads compose.small.yml: remove the COMPOSE_FILE line")
     if problems:
         print("Ooops.. .env needs a fix before the site can work:")
         for problem in problems:
             print("  - " + problem)
         sys.exit(1)
+    suggest_small(values)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Write .env for compose.yml with fresh secrets.")
     parser.add_argument("--site", default="http://localhost:8080", help="public address, e.g. https://modernsi.example.org")
     parser.add_argument("--live", action="store_true", help="no demo data and no Mailpit; fill in SMTP_* in .env afterwards")
+    parser.add_argument("--small", action="store_true", help="low-memory mode for a server with 1 GB of RAM (prebuilt images, memory caps)")
     parser.add_argument("--force", action="store_true", help="replace an existing .env")
     parser.add_argument("--check", action="store_true", help="only check the existing .env")
     args = parser.parse_args()
@@ -117,9 +155,14 @@ def main():
     values["DEMO_PASSWORD"] = "modernsi-demo" if is_local(site) else secrets.token_urlsafe(9)
     if args.live:
         values.update(DEMO="off", COMPOSE_PROFILES="", SMTP_HOST="", SMTP_PORT="587", SMTP_STARTTLS="true")
+    if args.small:
+        values.update(LOW_MEMORY="on", COMPOSE_FILE=small_files)
 
     lines = []
     for line in (root / ".env.example").read_text().splitlines():
+        # the COMPOSE_FILE line is commented out in .env.example and only switched on with --small
+        if line.startswith("# COMPOSE_FILE=") and args.small:
+            line = line[2:]
         name = line.split("=", 1)[0]
         if not line.startswith("#") and "=" in line and name in values:
             line = f"{name}={values[name]}"
@@ -136,6 +179,10 @@ def main():
         if not is_local(site):
             print("  This demo is reachable from the internet: anyone with the demo password can log in as the demo admin.")
             print("  Keep it to a short look, then go live (see 'Going live' in README.md).")
+    if args.small:
+        print("  memory: low-memory mode for a 1 GB server; up.sh pulls the prebuilt images (run sudo ./scripts/swap.sh once)")
+    else:
+        suggest_small(values)
     print("next:  ./scripts/up.sh")
 
 

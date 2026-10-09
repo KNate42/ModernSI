@@ -1,6 +1,7 @@
 # The whole ModernSI site in one stack: stores, API, worker, Next.js site and Caddy in front.
 # Settings come from .env next to this file (make it with `python3 scripts/new_env.py`), then:
-#   ./scripts/up.sh   (checks .env, then runs docker compose up -d --build --wait)
+#   ./scripts/up.sh   (checks .env, then runs docker compose up -d --build --wait, or pulls the prebuilt images)
+# With LOW_MEMORY=on, .env also loads compose.small.yml on top of this file: memory caps for a 1 GB server.
 # Only Caddy is reachable from outside (and Mailpit on 127.0.0.1 in demo mode); the stores have no host ports.
 # This work made by Anfinogentov Nikita
 name: modernsi-site
@@ -9,9 +10,11 @@ x-logging: &logging
   driver: json-file
   options: { max-size: "10m", max-file: "3" }
 
+# The two images of the site: prebuilt ones from GitHub (.github/workflows/images.yml, for amd64 and arm64)
+# or built here from the source; ./scripts/up.sh decides which (see "Small server (1 GB)" in README.md).
 x-backend: &backend
   build: ./backend
-  image: modernsi-backend:local
+  image: ${IMAGE_PREFIX:-ghcr.io/knate42/modernsi}-api:${IMAGE_TAG:-auto}
   logging: *logging
   environment: &backend-env
     MSI_POSTGRES_DSN: postgresql+asyncpg://modernsi:${POSTGRES_PASSWORD:?run python3 scripts/new_env.py first}@postgres:5432/modernsi
@@ -130,7 +133,7 @@ services:
 
   web:
     build: { context: ./frontend, args: { API_URL: "http://api:8040" } }
-    image: modernsi-web:local
+    image: ${IMAGE_PREFIX:-ghcr.io/knate42/modernsi}-web:${IMAGE_TAG:-auto}
     depends_on:
       api: { condition: service_healthy }
     healthcheck:

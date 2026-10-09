@@ -9,7 +9,9 @@ ModernSI is an independent student project and is not affiliated with, endorsed 
 - `frontend/` — Next.js site, see `frontend/README.md`
 - `design/mock/` — the static homepage and intro mock: the visual source of truth (palette, type, homepage), see Design below
 - `compose.yml`, `.env.example`, `scripts/` — the whole site in one Docker stack, see below
+- `compose.small.yml`, `infra/small/` — the low-memory mode for a server with 1 GB of RAM, see "Small server (1 GB)"
 - `infra/` — Docker Compose files for the development and test stores, and the Caddy config
+- `.github/workflows/images.yml` — builds the site's images for amd64 and arm64 and publishes them on ghcr.io
 - `docs/` — specs and implementation plans
 
 ## Open it in one command
@@ -61,12 +63,7 @@ To change the address or the mode after the first run, edit `.env` and run `./sc
 
 ## Put it on a server
 
-Any Linux VPS with 4 GB of RAM, or 2 GB plus a swap file (the images are built on the server, and the Next.js build next to running MongoDB and ClickHouse needs the room), and a domain name. Swap on a 2 GB server:
-
-```bash
-sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
+Any Linux VPS with 4 GB of RAM, or 2 GB plus a swap file (the images are built on the server, and the Next.js build next to running MongoDB and ClickHouse needs the room), and a domain name. Swap on a 2 GB server: `sudo ./scripts/swap.sh` (a 2 GB swap file, kept after reboots; running it again changes nothing). Only 1 GB of RAM? See [Small server (1 GB)](#small-server-1-gb).
 
 1. **DNS.** Point an `A` record (and `AAAA` for IPv6) of your domain, for example `modernsi.example.org`, at the server's address.
 2. **Firewall.** Open only 22 (SSH), 80 and 443 (TCP, plus 443/UDP for HTTP/3). For example with ufw: `ufw allow OpenSSH && ufw allow 80/tcp && ufw allow 443 && ufw enable`. The stores have no host ports, so nothing else needs to be open.
@@ -78,10 +75,10 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
    ```
    then fill in `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` and `MAIL_FROM` in `.env` with your mail provider's SMTP details (port 587 with STARTTLS; port 465 is not supported). With an `https://` address the ports become 80 and 443, Caddy gets a Let's Encrypt certificate by itself (the DNS record must already point at the server), redirects http to https, and the session cookie is `Secure`.
 5. **Start:** `./scripts/up.sh`. The first certificate takes a few seconds; `docker compose logs caddy` shows it. If SMTP is still empty, `up.sh` stops and says so, because sign-up codes would never arrive.
-6. **The first university and admin:**
+6. **The first university and admin**, inside the running API container (`exec`, not `run`: `run` would start the one-shots and a second API next to the first, which a small server has no room for):
    ```bash
-   docker compose run --rm api modernsi add-domain uni.edu --label Almaty --country KZ
-   docker compose run --rm api modernsi create-admin --email you@uni.edu --name "Your Name"
+   docker compose exec api modernsi add-domain uni.edu --label Almaty --country KZ
+   docker compose exec api modernsi create-admin --email you@uni.edu --name "Your Name"
    ```
 
 ### A demo on the server first
@@ -108,7 +105,55 @@ git pull
 ./scripts/up.sh
 ```
 
-The images are rebuilt, `init` applies new migrations, and only the services that changed are recreated; the data stays in the volumes.
+The images are rebuilt (in the low-memory mode: pulled), `init` applies new migrations, and only the services that changed are recreated; the data stays in the volumes. Update with `up.sh`, not a bare `docker compose pull`, which only knows the image names and not the commit they belong to. Coming from a version before the prebuilt images? The old images are not needed any more: `docker image rm modernsi-backend:local modernsi-web:local` frees about 700 MB.
+
+### Small server (1 GB)
+
+A free or very cheap server with 1 GB of RAM (x86-64 or ARM) runs the site in the low-memory mode: every service gets a memory cap and a small config (`compose.small.yml`, `infra/small/`), and the images are not built on the server (the Next.js build alone needs more than 1 GB) but pulled ready-made from ghcr.io. The caps are upper limits, not reservations: together they come to 912 MB (888 MB without the demo's Mailpit) while the stack really uses about half of that, and the swap file takes the rare moment when several services peak at once. So in this mode swap is required, not optional.
+
+First check the CPU, because MongoDB 8 and ClickHouse do not start on older ones (they crash in a loop with "Illegal instruction"; `up.sh` warns about it too):
+
+```bash
+uname -m                                                  # x86_64 or aarch64
+grep -o -w -m1 avx /proc/cpuinfo                          # x86_64: must print avx
+grep -o -w -E 'atomics|dcpop' /proc/cpuinfo | sort -u     # aarch64: must print both (ARMv8.2-A or newer)
+```
+
+Oracle Cloud's free Ampere A1 and AWS Graviton servers pass; a Raspberry Pi 4 and some cheap KVM servers with a plain "QEMU" CPU model do not. A container VPS (OpenVZ, LXC) cannot have its own swap, so it does not work either.
+
+```bash
+git clone <this repository> modernsi && cd modernsi
+sudo ./scripts/swap.sh                                              # once: 2 GB of swap, required in this mode
+python3 scripts/new_env.py --small --site https://modernsi.example.org   # add --live for the real site
+./scripts/up.sh                                                     # pulls the images, starts, waits until healthy
+```
+
+`--small` puts `LOW_MEMORY=on` and the `COMPOSE_FILE` line that loads `compose.small.yml` into `.env`; `up.sh` checks that the two agree, and warns when the machine has no swap. `new_env.py` and `up.sh` suggest the mode by themselves on a machine with less than 1.5 GB. Everything else (DNS, firewall, SMTP, the first admin with `docker compose exec`) is the same as in the steps above.
+
+What to expect:
+
+- The first start takes a few minutes: about 1 GB of images is downloaded (most of it MongoDB and ClickHouse; on disk they take about 4 GB, so keep 10 GB free). Later starts take under a minute.
+- The site itself is as fast as usual for a handful of visitors. Under a burst Caddy lets at most 8 requests at a time through to the Next.js server and 16 to the API, so pages wait a moment instead of a service running out of memory. A login takes 64 MB for its password check, so many logins at the same moment are checked one after another (the rest of the site keeps answering meanwhile).
+- Pages with the activity feed and the stats read from ClickHouse with small caches, so they can be a little slower. A very heavy query fails with a memory error instead of taking the server down.
+- In a test of the whole demo (all four demo logins, the review queue, a sign-up with the e-mail code) squeezed into 720 MB with no swap, about what a 1 GB server has left after the kernel and Docker, the stack used about 510 MB at rest (`docker stats`) and up to about 490 MB of process memory plus file cache under a burst of 40 page loads and 24 logins right after the first start, with every container under its cap and nothing killed.
+
+How much memory does it use? `docker stats` shows each service against its cap (`MEM USAGE / LIMIT`), `free -m` the whole machine. A service that ran out of its cap is killed by the kernel and restarts by itself; the kernel log keeps every such kill (`sudo dmesg | grep -i "killed process"`), and `docker inspect -f '{{.RestartCount}}' modernsi-site-api-1` counts the restarts (`docker inspect` shows `"OOMKilled": true` only until the restart).
+
+To go back to the normal mode on a bigger server, set `LOW_MEMORY=off`, delete the `COMPOSE_FILE` line in `.env` and run `./scripts/up.sh`; the data stays.
+
+### Prebuilt images
+
+`.github/workflows/images.yml` builds `ghcr.io/knate42/modernsi-api` and `ghcr.io/knate42/modernsi-web` for amd64 and arm64 on every push to the default branch, on tags like `v1.2.0` and when started by hand (Actions, images, Run workflow). Every build is tagged `sha-<commit>`; once both images are built, `latest` (the default branch) or the release tag moves to them. A build takes 20-40 minutes (arm64 is built under emulation).
+
+`IMAGE_TAG` in `.env` picks what `up.sh` pulls. The default, `auto`, pulls the images of the commit the server has checked out, so the code, the compose files and the configs always match the images; right after a push `up.sh` says when they are still being built. `IMAGE_TAG=latest` runs the newest build instead, and for a release check out the tag and pin it: `git checkout v1.2.0`, then `IMAGE_TAG=v1.2.0`.
+
+GitHub makes new packages private, and a server cannot pull a private package without a login. Once, after the first build: open the repository on GitHub, then Packages, `modernsi-api`, Package settings, Change visibility, Public; the same for `modernsi-web`. Or keep them private and log the server in with a personal access token (classic) that has only `read:packages`:
+
+```bash
+echo <token> | docker login ghcr.io -u <your GitHub user> --password-stdin
+```
+
+`./scripts/up.sh --pull` pulls in the normal mode too, and `./scripts/up.sh --build` builds on the server even in the low-memory mode (it needs 2 GB of RAM or swap). A fork publishes its own images under its own name: set `IMAGE_PREFIX=ghcr.io/<owner>/modernsi` in `.env`.
 
 ### Backups
 
