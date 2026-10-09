@@ -22,7 +22,13 @@ async def close_quietly(client):
 class stores:
     def __init__(self, settings):
         self.settings = settings
-        self.engine = create_async_engine(settings.postgres_dsn, pool_pre_ping=True, pool_size=10, max_overflow=10)
+        self.engine = create_async_engine(
+            settings.postgres_dsn,
+            pool_pre_ping=True,
+            pool_size=settings.db_pool_size,
+            max_overflow=settings.db_max_overflow,
+            pool_recycle=settings.db_pool_recycle,
+        )
         self.sessions = async_sessionmaker(self.engine, expire_on_commit=False)
         self.redis = Redis.from_url(settings.redis_url, decode_responses=True, socket_timeout=3)
         self.mongo_client = AsyncMongoClient(settings.mongo_url, serverSelectionTimeoutMS=2000)

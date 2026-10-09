@@ -6,6 +6,9 @@ const apiUrl = process.env.API_URL ?? "http://localhost:8040";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The Docker image sets NEXT_OUTPUT=standalone: a self-contained server.js without the whole node_modules.
+  // `npm run start` (and the e2e run) keep the regular build.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },

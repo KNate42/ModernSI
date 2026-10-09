@@ -1,0 +1,179 @@
+# The whole ModernSI site in one stack: stores, API, worker, Next.js site and Caddy in front.
+# Settings come from .env next to this file (make it with `python3 scripts/new_env.py`), then:
+#   ./scripts/up.sh   (checks .env, then runs docker compose up -d --build --wait, or pulls the prebuilt images)
+# With LOW_MEMORY=on, .env also loads compose.small.yml on top of this file: memory caps for a 1 GB server.
+# Only Caddy is reachable from outside (and Mailpit on 127.0.0.1 in demo mode); the stores have no host ports.
+# This work made by Anfinogentov Nikita
+name: modernsi-site
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+# The two images of the site: prebuilt ones from GitHub (.github/workflows/images.yml, for amd64 and arm64)
+# or built here from the source; ./scripts/up.sh decides which (see "Small server (1 GB)" in README.md).
+x-backend: &backend
+  build: ./backend
+  image: ${IMAGE_PREFIX:-ghcr.io/knate42/modernsi}-api:${IMAGE_TAG:-auto}
+  logging: *logging
+  environment: &backend-env
+    MSI_POSTGRES_DSN: postgresql+asyncpg://modernsi:${POSTGRES_PASSWORD:?run python3 scripts/new_env.py first}@postgres:5432/modernsi
+    MSI_REDIS_URL: redis://:${REDIS_PASSWORD:?run python3 scripts/new_env.py first}@redis:6379/0
+    MSI_MONGO_URL: mongodb://modernsi:${MONGO_PASSWORD:?run python3 scripts/new_env.py first}@mongo:27017/?authSource=admin
+    MSI_CLICKHOUSE_HOST: clickhouse
+    MSI_CLICKHOUSE_PORT: "8123"
+    MSI_CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?run python3 scripts/new_env.py first}
+    # "-" without ":" on purpose: an empty SMTP_HOST in a live .env stays empty and init stops on it,
+    # instead of quietly sending sign-up codes to a Mailpit that does not run
+    MSI_SMTP_HOST: ${SMTP_HOST-mailpit}
+    MSI_SMTP_PORT: ${SMTP_PORT-1025}
+    MSI_SMTP_USER: ${SMTP_USER:-}
+    MSI_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    MSI_SMTP_STARTTLS: ${SMTP_STARTTLS-false}
+    MSI_MAIL_FROM: ${MAIL_FROM:-ModernSI <no-reply@modernsi.local>}
+    # the public address: links in e-mails, the allowed Origin, and the Secure cookie flag when it is https
+    MSI_SITE_URL: ${SITE_ADDRESS:-http://localhost:8080}
+    MSI_ALLOWED_ORIGINS: '["${SITE_ADDRESS:-http://localhost:8080}"]'
+    # safe: the API port is not published, every request comes through Caddy, which overwrites the header
+    MSI_TRUST_FORWARDED_FOR: "true"
+    MSI_LOG_SALT: ${LOG_SALT:?run python3 scripts/new_env.py first}
+    MSI_DEMO_PASSWORD: ${DEMO_PASSWORD:-modernsi-demo}
+  depends_on: &stores-ready
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    mongo: { condition: service_healthy }
+    clickhouse: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment: { POSTGRES_USER: modernsi, POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}", POSTGRES_DB: modernsi }
+    volumes: [pg:/var/lib/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U modernsi"], interval: 5s, timeout: 3s, retries: 30 }
+    restart: unless-stopped
+    logging: *logging
+
+  redis:
+    image: redis:8-alpine
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDISCLI_AUTH\""]
+    environment: { REDISCLI_AUTH: "${REDIS_PASSWORD}" }
+    volumes: [redis:/data]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 5s, timeout: 3s, retries: 30 }
+    restart: unless-stopped
+    logging: *logging
+
+  mongo:
+    image: mongo:8
+    environment: { MONGO_INITDB_ROOT_USERNAME: modernsi, MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}" }
+    volumes: [mongo:/data/db]
+    healthcheck: { test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"], interval: 5s, timeout: 5s, retries: 30 }
+    restart: unless-stopped
+    logging: *logging
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.8
+    environment:
+      CLICKHOUSE_USER: modernsi
+      CLICKHOUSE_PASSWORD: "${CLICKHOUSE_PASSWORD}"
+      CLICKHOUSE_DB: modernsi
+    ulimits: { nofile: { soft: 262144, hard: 262144 } }
+    volumes: [clickhouse:/var/lib/clickhouse]
+    healthcheck: { test: ["CMD", "wget", "-qO-", "http://localhost:8123/ping"], interval: 5s, timeout: 3s, retries: 30 }
+    restart: unless-stopped
+    logging: *logging
+
+  # One-shot: migrations, then with DEMO=on the demo campuses, accounts and content (prints the demo logins);
+  # with DEMO off it checks that real mail is set up and blocks any demo accounts left from a demo run.
+  init:
+    <<: *backend
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        modernsi migrate
+        if [ "$$DEMO" = on ]; then
+          modernsi seed-demo
+        else
+          modernsi check-mail
+          modernsi seed-demo --disable
+        fi
+    environment:
+      <<: *backend-env
+      DEMO: ${DEMO:-off}
+    restart: "no"
+
+  api:
+    <<: *backend
+    depends_on:
+      <<: *stores-ready
+      init: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8040/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  worker:
+    <<: *backend
+    command: ["modernsi", "worker", "--heartbeat", "/tmp/worker-alive"]
+    # healthy while the loop keeps turning: a round every 2 s touches the file
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/worker-alive') > 120)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      <<: *stores-ready
+      init: { condition: service_completed_successfully }
+    restart: unless-stopped
+
+  web:
+    build: { context: ./frontend, args: { API_URL: "http://api:8040" } }
+    image: ${IMAGE_PREFIX:-ghcr.io/knate42/modernsi}-web:${IMAGE_TAG:-auto}
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/icon.svg').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    image: caddy:2.10-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-http://localhost:8080}
+      HTTP_PORT: ${HTTP_PORT:-8080}
+      HTTPS_PORT: ${HTTPS_PORT:-8443}
+    # the same port inside and outside, so the address in SITE_ADDRESS is the one Caddy listens on
+    ports:
+      - "${HTTP_PORT:-8080}:${HTTP_PORT:-8080}"
+      - "${HTTPS_PORT:-8443}:${HTTPS_PORT:-8443}"
+      - "${HTTPS_PORT:-8443}:${HTTPS_PORT:-8443}/udp"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck: { test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"], interval: 10s, timeout: 3s, retries: 10 }
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_healthy }
+    restart: unless-stopped
+    logging: *logging
+
+  # Demo mode only (COMPOSE_PROFILES=demo): catches every e-mail, sign-up codes included.
+  # Its web page is bound to 127.0.0.1, so it never shows up on the public side.
+  mailpit:
+    image: axllent/mailpit:v1.31
+    profiles: [demo]
+    ports: ["127.0.0.1:${MAILPIT_PORT:-8025}:8025"]
+    restart: unless-stopped
+    logging: *logging
+
+volumes: { pg: {}, redis: {}, mongo: {}, clickhouse: {}, caddy_data: {}, caddy_config: {} }

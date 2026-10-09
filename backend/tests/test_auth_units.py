@@ -7,7 +7,8 @@ import uuid
 import pytest
 
 from modernsi.auth.codes import check_code, issue_code
-from modernsi.auth.passwords import hash_password, verify_password
+from modernsi.auth.passwords import hash_password, hash_password_async, hasher, verify_password, verify_password_async
+from modernsi.auth.service import dummy_hash
 from modernsi.auth.sessions import create_session, drop_all_sessions, drop_session, resolve_session
 from modernsi.core.errors import api_error
 
@@ -18,6 +19,15 @@ async def test_password_roundtrip():
     assert verify_password(stored, "correct horse battery")
     assert not verify_password(stored, "wrong horse battery")
     assert not verify_password("garbage", "anything")
+
+
+async def test_password_async_and_dummy_hash():
+    stored = await hash_password_async("correct horse battery")
+    assert await verify_password_async(stored, "correct horse battery")
+    assert not await verify_password_async(stored, "wrong horse battery")
+    # the fixed hash for unknown e-mails must cost exactly what a real one costs
+    assert not hasher.check_needs_rehash(dummy_hash)
+    assert not await verify_password_async(dummy_hash, "anything")
 
 
 async def test_session_lifecycle(hub):

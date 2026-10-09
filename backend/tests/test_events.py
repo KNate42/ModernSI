@@ -79,7 +79,9 @@ async def test_event_from_idea(make_client, hub, settings):
     idea_id = await seed_team_idea(hub, author, members)
     author_client = await login_as(make_client(), hub, author)
     stranger = await login_as(make_client(), hub, await make_user(hub, email="s@uni.edu", name="S"))
-    assert (await stranger.post("/api/events", json=event_body(idea_id=str(idea_id)))).status_code == 403
+    refused = await stranger.post("/api/events", json=event_body(idea_id=str(idea_id)))
+    assert refused.status_code == 403
+    assert refused.json()["error"]["message"] == "Only the author or a curator can put this idea on the calendar"
     response = await author_client.post("/api/events", json=event_body(idea_id=str(idea_id), scope="network"))
     assert response.status_code == 201
     event = response.json()

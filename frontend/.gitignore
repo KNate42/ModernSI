@@ -50,3 +50,6 @@ next-env.d.ts
 
 # routes.spec screenshots (SHOTS_DIR)
 /tests/e2e/shots/
+
+# Keep the example of the frontend settings in git (the rule above hides every .env*)
+!.env.example

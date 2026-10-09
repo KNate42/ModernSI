@@ -1,0 +1,18 @@
+<!--
+  ClickHouse query settings for the low-memory mode (LOW_MEMORY=on, compose.small.yml).
+  Mounted into /etc/clickhouse-server/users.d/; the "default" profile is the one the site's user runs with.
+  This work made by Anfinogentov Nikita
+-->
+<clickhouse>
+    <profiles>
+        <default>
+            <max_threads>2</max_threads>
+            <max_memory_usage>67108864</max_memory_usage>
+            <max_bytes_before_external_group_by>33554432</max_bytes_before_external_group_by>
+            <max_bytes_before_external_sort>33554432</max_bytes_before_external_sort>
+            <max_insert_threads>1</max_insert_threads>
+            <max_block_size>8192</max_block_size>
+            <log_queries>0</log_queries>
+        </default>
+    </profiles>
+</clickhouse>

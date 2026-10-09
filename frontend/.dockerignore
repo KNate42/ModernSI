@@ -1,0 +1,10 @@
+# Keeps the build context of frontend/Dockerfile small: no local installs, builds, test output or env files.
+# This work made by Anfinogentov Nikita
+node_modules
+.next
+.env*
+test-results
+playwright-report
+tests/e2e/shots
+tsconfig.tsbuildinfo
+next-env.d.ts
